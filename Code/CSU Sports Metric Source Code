@@ -1,1 +1,51 @@
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.Jlabel;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+
+
+public class Color
+{
+
+    public Color() {
+    super("color");
+
+    Color c = Color.black;
+    }
+
+    
+}
+
+
+public class SportsMetrics {
+
+    JFrame frame;
+
+    public void CreateGUI()
+    {
+        frame = new JFrame("CSU Sports Metrics"); // Create a new frame window frame
+
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Once the close is clicked end the program
+        JButton fanButton  = new JButton("Fans");
+        JButton CoachButton = new JButton("Coach");
+        JButton PlayerButton = new JButton("Players");
+
+        FlowLayout layout = new FlowLayout(FlowLayout.RIGHT);
+
+
+        frame.pack();  // sizes the window to fit its preferred size (calculated above)
+        frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
+        frame.setVisible(true); // makes the window visible to the user
+    }
+    
+    public static void main(String[] args) throws Exception {
+        SportsMetrics m = new SportsMetrics();
+
+        m.CreateGUI();
+    }
+    
+
+}
 
