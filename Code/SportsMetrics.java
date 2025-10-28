@@ -40,10 +40,48 @@ public class SportsMetrics {
 
         // ------- Fan Panel System Display  -------
         fanPanel = new JPanel();
-        JLabel fanLabel = new JLabel("Fans Page");
+        fanPanel.setLayout(new BoxLayout(fanPanel, BoxLayout.Y_AXIS));
         fanPanel.setBackground(AppColors.background);
+
+        // -- Title Label --
+        JLabel fanLabel = new JLabel("Fans Page");
         fanLabel.setForeground(AppColors.text); // Used to change the text white
+        fanLabel.setAlignmentX(Component.CENTER_ALIGNMENT); //centers the text horizontal
         fanPanel.add(fanLabel);
+
+        // -- Subpanel for username label and text entry fields --
+        JPanel usernamePanel = new JPanel();
+        usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.X_AXIS));
+        usernamePanel.setBackground(AppColors.background);
+        JLabel userLabel = new JLabel("Please enter your username: ");
+        userLabel.setForeground(AppColors.text); // Used to change the text white
+        JTextField userText = new JTextField(15);
+        userText.setMaximumSize(new Dimension(200, 25));
+
+        usernamePanel.add(userLabel);
+        usernamePanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        usernamePanel.add(userText);
+        usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        fanPanel.add(usernamePanel);
+
+        // -- subpanel for Password label and text entry fields --
+
+        JPanel passwordPanel = new JPanel();
+        passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
+        passwordPanel.setBackground(AppColors.background);
+        JLabel passLabel = new JLabel("Please enter your Password: ");
+        passLabel.setForeground(AppColors.text); // Used to change the text white
+        JTextField passText = new JTextField(15);
+        passText.setMaximumSize(new Dimension(200, 25));
+
+        passwordPanel.add(passLabel);
+        passwordPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        passwordPanel.add(passText);
+        passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        fanPanel.add(passwordPanel);
+
 
         // ------- Coach Panel System Display  -------
         coachPanel = new JPanel();
