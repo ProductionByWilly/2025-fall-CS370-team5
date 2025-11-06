@@ -1,8 +1,6 @@
 import java.awt.*;
 import javax.swing.*;
 
-
-
 public class SportsMetrics {
 
     JFrame frame;
@@ -14,29 +12,25 @@ public class SportsMetrics {
     JPanel cards;
     CardLayout cardLayout;
 
-
     public void CreateGUI()
     {
         frame = new JFrame("CSU Sports Metrics"); // Create a new frame window frame
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Once the close is clicked end the program
         frame.setLayout(new BorderLayout());  // set the layout
 
-
         //Create the different buttons for each category
         JButton fanButton  = new JButton("Fans");
         JButton CoachButton = new JButton("Coach");
         JButton PlayerButton = new JButton("Players");
 
-
         // ------- Main Panel System Display  -------
         MainPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Used to move the buttons around the frame
         MainPanel.setBackground(AppColors.background); // Access the AppColors to access different colors for the different sections
-        
+
         // ----- Add the buttons to the main panel -----
         MainPanel.add(fanButton);
         MainPanel.add(CoachButton);
         MainPanel.add(PlayerButton);
-        
 
         // ------- Fan Panel System Display  -------
         fanPanel = new JPanel();
@@ -62,11 +56,9 @@ public class SportsMetrics {
         usernamePanel.add(Box.createRigidArea(new Dimension(10, 0)));
         usernamePanel.add(userText);
         usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         fanPanel.add(usernamePanel);
 
         // -- subpanel for Password label and text entry fields --
-
         JPanel passwordPanel = new JPanel();
         passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
         passwordPanel.setBackground(AppColors.background);
@@ -79,23 +71,48 @@ public class SportsMetrics {
         passwordPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         passwordPanel.add(passText);
         passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         fanPanel.add(passwordPanel);
 
+        // ---- Back button for Fan Page ----
+        JButton fanBack = new JButton("Back to Main Menu");
+        fanBack.setAlignmentX(Component.CENTER_ALIGNMENT);
+        fanBack.addActionListener(e -> cardLayout.show(cards, "Home Page"));
+        fanPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        fanPanel.add(fanBack);
 
         // ------- Coach Panel System Display  -------
         coachPanel = new JPanel();
-        JLabel coachLabel = new JLabel("Coach Page");
+        coachPanel.setLayout(new BoxLayout(coachPanel, BoxLayout.Y_AXIS));
         coachPanel.setBackground(AppColors.background);
+
+        JLabel coachLabel = new JLabel("Coach Page");
         coachLabel.setForeground(AppColors.text); // Used to change the text white
+        coachLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         coachPanel.add(coachLabel);
+
+        // ---- Back button for Coach Page ----
+        JButton coachBack = new JButton("Back to Main Menu");
+        coachBack.setAlignmentX(Component.CENTER_ALIGNMENT);
+        coachBack.addActionListener(e -> cardLayout.show(cards, "Home Page"));
+        coachPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        coachPanel.add(coachBack);
 
         // ------- Player Panel System Display  -------
         JPanel playerPanel = new JPanel();
-        JLabel playerLabel = new JLabel("Player Page");
+        playerPanel.setLayout(new BoxLayout(playerPanel, BoxLayout.Y_AXIS));
         playerPanel.setBackground(AppColors.background);
+
+        JLabel playerLabel = new JLabel("Player Page");
         playerLabel.setForeground(AppColors.text); // Used to change the text white
+        playerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         playerPanel.add(playerLabel);
+
+        // ---- Back button for Player Page ----
+        JButton playerBack = new JButton("Back to Main Menu");
+        playerBack.setAlignmentX(Component.CENTER_ALIGNMENT);
+        playerBack.addActionListener(e -> cardLayout.show(cards, "Home Page"));
+        playerPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        playerPanel.add(playerBack);
 
         //Card layout to hold the different panels we are using
         cardLayout = new CardLayout();
@@ -108,7 +125,6 @@ public class SportsMetrics {
         cards.add(playerPanel,"Player Page");
 
         // ------- To show the corresponding page the name must match with that name -----
-        // Clicking the fan page must match the same label that panel has
         fanButton.addActionListener(e -> cardLayout.show(cards,"Fan Page"));
         CoachButton.addActionListener(e -> cardLayout.show(cards,"Coach Page"));
         PlayerButton.addActionListener(e -> cardLayout.show(cards,"Player Page"));
@@ -117,8 +133,9 @@ public class SportsMetrics {
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
         frame.setVisible(true); // makes the window visible to the user
     }
-    
+
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeLater(() -> new SportsMetrics().CreateGUI());
     }
 }
+
