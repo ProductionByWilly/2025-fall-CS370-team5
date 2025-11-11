@@ -12,14 +12,13 @@ public class SportsMetrics {
     JPanel cards;
     CardLayout cardLayout;
 
-    public void CreateGUI()
-    {
+    public void CreateGUI() {
         frame = new JFrame("CSU Sports Metrics"); // Create a new frame window frame
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Once the close is clicked end the program
         frame.setLayout(new BorderLayout());  // set the layout
 
         //Create the different buttons for each category
-        JButton fanButton  = new JButton("Fans");
+        JButton fanButton = new JButton("Fans");
         JButton CoachButton = new JButton("Coach");
         JButton PlayerButton = new JButton("Players");
 
@@ -43,35 +42,8 @@ public class SportsMetrics {
         fanLabel.setAlignmentX(Component.CENTER_ALIGNMENT); //centers the text horizontal
         fanPanel.add(fanLabel);
 
-        // -- Subpanel for username label and text entry fields --
-        JPanel usernamePanel = new JPanel();
-        usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.X_AXIS));
-        usernamePanel.setBackground(AppColors.background);
-        JLabel userLabel = new JLabel("Please enter your username: ");
-        userLabel.setForeground(AppColors.text); // Used to change the text white
-        JTextField userText = new JTextField(15);
-        userText.setMaximumSize(new Dimension(200, 25));
-
-        usernamePanel.add(userLabel);
-        usernamePanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        usernamePanel.add(userText);
-        usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        fanPanel.add(usernamePanel);
-
-        // -- subpanel for Password label and text entry fields --
-        JPanel passwordPanel = new JPanel();
-        passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
-        passwordPanel.setBackground(AppColors.background);
-        JLabel passLabel = new JLabel("Please enter your Password: ");
-        passLabel.setForeground(AppColors.text); // Used to change the text white
-        JTextField passText = new JTextField(15);
-        passText.setMaximumSize(new Dimension(200, 25));
-
-        passwordPanel.add(passLabel);
-        passwordPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        passwordPanel.add(passText);
-        passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        fanPanel.add(passwordPanel);
+        // add login buttons
+        fanPanel.add(loginPanel());
 
         // ---- Back button for Fan Page ----
         JButton fanBack = new JButton("Back to Main Menu");
@@ -90,6 +62,9 @@ public class SportsMetrics {
         coachLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         coachPanel.add(coachLabel);
 
+        // add login buttons
+        coachPanel.add(loginPanel());
+
         // ---- Back button for Coach Page ----
         JButton coachBack = new JButton("Back to Main Menu");
         coachBack.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -107,6 +82,9 @@ public class SportsMetrics {
         playerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         playerPanel.add(playerLabel);
 
+        // add login buttons
+        playerPanel.add(loginPanel());
+
         // ---- Back button for Player Page ----
         JButton playerBack = new JButton("Back to Main Menu");
         playerBack.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -119,19 +97,56 @@ public class SportsMetrics {
         cards = new JPanel(cardLayout);
 
         // ------ Add the different panels into the card with their corresponding names -----
-        cards.add(MainPanel,"Home Page");
-        cards.add(fanPanel,"Fan Page");
-        cards.add(coachPanel,"Coach Page");
-        cards.add(playerPanel,"Player Page");
+        cards.add(MainPanel, "Home Page");
+        cards.add(fanPanel, "Fan Page");
+        cards.add(coachPanel, "Coach Page");
+        cards.add(playerPanel, "Player Page");
 
         // ------- To show the corresponding page the name must match with that name -----
-        fanButton.addActionListener(e -> cardLayout.show(cards,"Fan Page"));
-        CoachButton.addActionListener(e -> cardLayout.show(cards,"Coach Page"));
-        PlayerButton.addActionListener(e -> cardLayout.show(cards,"Player Page"));
+        fanButton.addActionListener(e -> cardLayout.show(cards, "Fan Page"));
+        CoachButton.addActionListener(e -> cardLayout.show(cards, "Coach Page"));
+        PlayerButton.addActionListener(e -> cardLayout.show(cards, "Player Page"));
 
-        frame.add(cards,BorderLayout.CENTER);
+        frame.add(cards, BorderLayout.CENTER);
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
         frame.setVisible(true); // makes the window visible to the user
+    }
+    private JPanel loginPanel() {
+        JPanel loginPanel = new JPanel();
+        loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.Y_AXIS));
+        loginPanel.setBackground(AppColors.background);
+
+        // -- Subpanel for username label and text entry fields --
+        JPanel usernamePanel = new JPanel();
+        usernamePanel.setLayout(new BoxLayout(usernamePanel, BoxLayout.X_AXIS));
+        usernamePanel.setBackground(AppColors.background);
+        JLabel userLabel = new JLabel("Please enter your username: ");
+        userLabel.setForeground(AppColors.text); // Used to change the text white
+        JTextField userText = new JTextField(15);
+        userText.setMaximumSize(new Dimension(200, 25));
+
+        usernamePanel.add(userLabel);
+        usernamePanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        usernamePanel.add(userText);
+        usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginPanel.add(usernamePanel);
+
+        // -- subpanel for Password label and text entry fields --
+        JPanel passwordPanel = new JPanel();
+        passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
+        passwordPanel.setBackground(AppColors.background);
+        JLabel passLabel = new JLabel("Please enter your Password: ");
+        passLabel.setForeground(AppColors.text); // Used to change the text white
+        JTextField passText = new JTextField(15);
+        passText.setMaximumSize(new Dimension(200, 25));
+
+        passwordPanel.add(passLabel);
+        passwordPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        passwordPanel.add(passText);
+        passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginPanel.add(passwordPanel);
+
+        return loginPanel;
     }
 
     public static void main(String[] args) throws Exception {
