@@ -1,0 +1,1 @@
+public enum Role { FAN, PLAYER, COACH }
