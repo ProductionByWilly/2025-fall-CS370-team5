@@ -1,49 +1,48 @@
 import java.awt.*;
 import javax.swing.*;
 
-
 public class SportsMetrics {
 
     JFrame frame;
+    //Used to hold the different panels in the system
+    JPanel cards;
+    CardLayout cardLayout;
+
 
     public void CreateGUI()
     {
         frame = new JFrame("CSU Sports Metrics"); // Create a new frame window frame
-
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Once the close is clicked end the program
         frame.setLayout(new BorderLayout());  // set the layout
 
+        //Card layout to hold the different panels we are using
+        cardLayout = new CardLayout();
+        cards = new JPanel(cardLayout);
 
-        //Create the different buttons for each category
-        JButton fanButton  = new JButton("Fans");
-        JButton CoachButton = new JButton("Coach");
-        JButton PlayerButton = new JButton("Players");
+        // ------ Add the different panels into the card with their corresponding names -----
+        cards.add(new MainPanel(cardLayout, cards) , "Home Page");
 
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // Used to move the buttons around the frame
+        // ------- Fan Panel System Display  -------
+        cards.add(new FanPanel(cardLayout,cards),"Fan Page");
 
-        panel.setBackground(AppColors.background); // Access the AppColors to access different colors for the different sections
+        // ------- Coach Panel System Display  -------
+        cards.add(new CoachPanel(cardLayout,cards),"Coach Page");
 
-
-        //fanButton.setForeground(AppColors.text); //Use to change the color of the text
-
-        //Add the different buttons to the page
-        panel.add(fanButton);
-        panel.add(CoachButton);
-        panel.add(PlayerButton);
-        
+        // ------- Player Panel System Display  -------
+        cards.add(new PlayerPanel(cardLayout,cards),"Player Page");
 
 
+        frame.add(cards,BorderLayout.CENTER);
+        frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
+        frame.setVisible(true); // makes the window visible to the user
 
-        frame.add(panel); // Adds the panels that contain the buttons - Adds the buttons to the screen
+        frame.add(cards,BorderLayout.CENTER);
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
         frame.setVisible(true); // makes the window visible to the user
     }
-    
+
     public static void main(String[] args) throws Exception {
-        SportsMetrics m = new SportsMetrics();
-
-        m.CreateGUI();
+        SwingUtilities.invokeLater(() -> new SportsMetrics().CreateGUI());
     }
-
-
 }
+
