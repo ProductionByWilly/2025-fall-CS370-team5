@@ -41,8 +41,10 @@ public class SportsMetrics {
         frame.setVisible(true); // makes the window visible to the user
     }
 
+
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeLater(() -> new SportsMetrics().CreateGUI());
     }
 }
+
 
