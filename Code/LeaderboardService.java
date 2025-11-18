@@ -1,5 +1,8 @@
 // LeaderboardService class for accessing database
 import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LeaderboardService {
     public List<PlayerRecord> getLeaderboard() throws SQLException {
@@ -7,7 +10,7 @@ public class LeaderboardService {
         Connection conn = Database.getConnection(); // Connect to database
 
         String sql = "SELECT player_name, score FROM leaderboard ORDER BY score DESC";
-        PreparedStatement st = conn.prepareStatement(sql);
+        PreparedStatement stmt = conn.prepareStatement(sql);
         ResultSet rs = stmt.executeQuery();
 
         while(rs.next()) {

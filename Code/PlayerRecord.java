@@ -10,7 +10,7 @@ public class PlayerRecord {
     public String getName() {
         return name;
     }
-    public Int getScore() {
+    public int getScore() {
         return score;
     }
 }
