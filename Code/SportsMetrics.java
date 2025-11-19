@@ -36,9 +36,6 @@ public class SportsMetrics {
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
         frame.setVisible(true); // makes the window visible to the user
 
-        frame.add(cards,BorderLayout.CENTER);
-        frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window
-        frame.setVisible(true); // makes the window visible to the user
     }
 
 

@@ -12,17 +12,19 @@ public class MainPanel extends BasePanel {
         //Create a section for the banner on the top
         JPanel TopBanner = new JPanel();
         TopBanner.setLayout(null); // This allows us to chose the percise location for each item
-        TopBanner.setBounds(0,0,1535 ,130); // setBounds is needed for each item or they will not display on the page
-        TopBanner.setBackground(Color.cyan);
+        TopBanner.setBounds(0,0,1535 ,200); // setBounds is needed for each item or they will not display on the page
         add(TopBanner);
 
 
         //Get the location for the image
-        ImageIcon imageIcon = new ImageIcon(getClass().getResource("/Resources/images/banner.jpg"));
+        ImageIcon imageIcon = new ImageIcon(getClass().getResource("/Resources/images/banner.png"));
 
+        Image ScaledIcon = imageIcon.getImage().getScaledInstance(1535, 400,Image.SCALE_SMOOTH);
+        
+        ImageIcon ScaledImage = new ImageIcon(ScaledIcon);
         //Add an image to the top banner
-        JLabel image = new JLabel(imageIcon);
-        image.setBounds(0,0,1535 ,130);
+        JLabel image = new JLabel(ScaledImage);
+        image.setBounds(0,0,1535 ,100);
         TopBanner.add(image);
 
 
