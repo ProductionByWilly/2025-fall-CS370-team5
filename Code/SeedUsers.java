@@ -1,5 +1,6 @@
 import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
+import Database.Database;
 
 public class SeedUsers {
     public static void main(String[] args) throws Exception {

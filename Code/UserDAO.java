@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.Optional;
+import Database.Database;
 
 public class UserDAO {
     public Optional<User> findByEmail(String email) {
