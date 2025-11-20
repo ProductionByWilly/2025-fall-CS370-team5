@@ -2,7 +2,6 @@ import java.awt.*;
 import javax.swing.*;
 
 public class MainPanel extends BasePanel {
-
     public MainPanel(CardLayout cardLayout,JPanel cards)
     {
         super("Main Page",cardLayout,cards);
@@ -26,7 +25,6 @@ public class MainPanel extends BasePanel {
         DescriptionChoice.setBounds(150, 200, 1200, 50);
         add(DescriptionChoice);
 
-
         //Get the location for the image
         ImageIcon imageIcon = new ImageIcon(getClass().getResource("/Resources/images/banner.png"));
         //Scale the image to the size we need to cover the banner
@@ -40,25 +38,30 @@ public class MainPanel extends BasePanel {
         String FanDashboardLabel = "Fan Dashboard";
         String FanDescription = "<html>Track favorite teams, participate in polls and view the leaderboard</html>";
         String FanButtonLabel = "Continue as Fan";
+        String FanSymbolPath = "/Resources/images/FanIcon.jpg";
 
         String CoachDashboardLabel = "Coach Dashboard";
         String CoachDescription = "<html>Manage team, view analytics, and manage stats</html>";
         String CoachButtonLabel = "Continue as Coach";
+        String CoachSymbolPath = "/Resources/images/TrophyIcon.png";
 
         String PlayerDashboardLabel = "Player Dashboard";
         String PlayerDescription = "<html>View and filter personal stats,view performance metrics and efficiency ratings</html>";
         String PlayerButtonLabel = "Continue as Player";
+        
 
         //Create each section that is needed
-        CreateSection(FanDashboardLabel,FanDescription,FanButtonLabel,50,300,350,200,AppColors.softBlue,"Fan Page");
-        CreateSection(CoachDashboardLabel,CoachDescription,CoachButtonLabel,600,300,350,200,AppColors.green,"Coach Page");
-        CreateSection(PlayerDashboardLabel,PlayerDescription,PlayerButtonLabel,1150,300,350,200,AppColors.magenta,"Player Page");
+        CreateSection(FanDashboardLabel,FanDescription,FanButtonLabel,50,300,350,200,AppColors.softBlue,"Fan Page",FanSymbolPath);
+        CreateSection(CoachDashboardLabel,CoachDescription,CoachButtonLabel,600,300,350,200,AppColors.green,"Coach Page",CoachSymbolPath);
+        CreateSection(PlayerDashboardLabel,PlayerDescription,PlayerButtonLabel,1150,300,350,200,AppColors.magenta,"Player Page",CoachSymbolPath);
 
+        //Call this function to create the section for the sign up
         SignUpSection();
     }
 
     //Helper function that is used to create each section
-    public void CreateSection(String DashboardLabel,String DescriptionLabel,String ButtonLabel,int x,int y,int w,int h,Color BorderAndButtonColor,String CardName)
+    public void CreateSection(String DashboardLabel,String DescriptionLabel,String ButtonLabel,int x,int y,int w,int h,Color BorderAndButtonColor,
+        String CardName,String path)
     {
         //Create a section for the fan section or a container with some information
         JPanel Section = new JPanel();
@@ -66,6 +69,23 @@ public class MainPanel extends BasePanel {
         Section.setBounds(x,y,w,h); //X - positon, Y - height, width - width of the section, height - height of the section
         Section.setBackground(AppColors.darkTeal);
         Section.setBorder(BorderFactory.createLineBorder(BorderAndButtonColor,4,true));
+
+        //Create a space for the image to be placed
+        JPanel symbolSpace = new JPanel();
+        symbolSpace.setBounds(10,10,50,45);
+
+        //Get the location for the image by passing it from the main function
+        ImageIcon imageIcon = new ImageIcon(getClass().getResource(path));
+        //Scale the image
+        Image ScaledIcon = imageIcon.getImage().getScaledInstance(50, 45,Image.SCALE_SMOOTH);
+        ImageIcon ScaledImage = new ImageIcon(ScaledIcon); 
+        JLabel image = new JLabel(ScaledImage);
+        image.setBounds(0,0,200 ,210);
+        //Adding the image to the space we created for the image
+        symbolSpace.add(image);
+
+        //Add the image into the section
+        Section.add(symbolSpace);
 
         //The text to be added into the dashboard 
         JLabel Dashboard = new JLabel(DashboardLabel);
@@ -93,7 +113,6 @@ public class MainPanel extends BasePanel {
         Button.setAlignmentX(CENTER_ALIGNMENT);
         Button.addActionListener(e -> cardLayout.show(cards,CardName));
         Section.add(Button);
-
         //Add the text into the fan section/container
         add(Section);
     }
@@ -128,14 +147,27 @@ public class MainPanel extends BasePanel {
         //Label for the password
         JLabel passwordLabel = new JLabel("Password");
         passwordLabel.setForeground(Color.WHITE);
-        passwordLabel.setBounds(10,130,80,20);
+        passwordLabel.setBounds(10,120,80,20);
         
         SignUpSection.add(passwordLabel);
 
         JButton SignUpButton = new JButton("Sign in");
-        SignUpButton.setBounds(40,185,350,30);
+        SignUpButton.setBounds(40,190,350,30);
+        SignUpButton.setBackground(AppColors.lightGray);
+        SignUpButton.setForeground(Color.WHITE);
         SignUpSection.add(SignUpButton);
+
+        JPanel usernamePanel = new JPanel();
+        usernamePanel.setBackground(AppColors.lightGray);
+        usernamePanel.setBounds(15,90,400,22);
+        SignUpSection.add(usernamePanel);
+
+        JPanel passwordPanel = new JPanel();
+        passwordPanel.setBackground(AppColors.lightGray);
+        passwordPanel.setBounds(15,140,400,22);
+        SignUpSection.add(passwordPanel);
 
         add(SignUpSection);
     }
+
 }
