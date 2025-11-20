@@ -1,7 +1,18 @@
 import java.awt.*;
+import java.net.URL;
 import javax.swing.*;
 
 public class MainPanel extends BasePanel {
+
+    // Sign up UI state 
+    private JTextField signUpEmailField;
+    private JPasswordField signUpPasswordField;
+    private JComboBox<String> signUpRoleBox;
+    private JLabel signUpMessageLabel;
+
+    // Auth service (DB + BCrypt) 
+    private final AuthService auth = new AuthService();
+
     public MainPanel(CardLayout cardLayout, JPanel cards) {
         super("Main Page", cardLayout, cards);
         setLayout(new BorderLayout());
@@ -10,6 +21,7 @@ public class MainPanel extends BasePanel {
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBackground(AppColors.darkTeal);
+        
         
         // Add top banner
         contentPanel.add(topBanner());
@@ -52,9 +64,10 @@ public class MainPanel extends BasePanel {
         contentPanel.add(SignUpSection());
         contentPanel.add(Box.createVerticalGlue());
         
+        // Attach assembled UI to the frame
         add(contentPanel, BorderLayout.CENTER);
     }
-
+       
     private JPanel topBanner(){
         //Create a section for the banner on the top
         JPanel TopBanner = new JPanel(new BorderLayout());
@@ -68,12 +81,22 @@ public class MainPanel extends BasePanel {
         TopBanner.add(Title);
         
         //Get the location for the image
-        ImageIcon imageIcon = new ImageIcon(getClass().getResource("/Resources/images/banner.png"));
-        //Scale the image to the size we need to cover the banner
-        Image ScaledIcon = imageIcon.getImage().getScaledInstance(1535, 200,Image.SCALE_SMOOTH);
-        ImageIcon ScaledImage = new ImageIcon(ScaledIcon);
-        //Add an image to the top banner
-        JLabel image = new JLabel(ScaledImage);
+        URL bannerUrl = getClass().getResource("/Resources/images/banner.png");
+        JLabel image = new JLabel();
+        if (bannerUrl != null) {
+            ImageIcon imageIcon = new ImageIcon(bannerUrl);
+            //Scale the image to the size we need to cover the banner
+            Image ScaledIcon = imageIcon.getImage().getScaledInstance(1535, 200,Image.SCALE_SMOOTH);
+            ImageIcon ScaledImage = new ImageIcon(ScaledIcon);
+            //Add an image to the top banner
+            image.setIcon(ScaledImage);
+        } else {
+            System.err.println("⚠️  banner.png not found on classpath (/Resources/images/banner.png)");
+            image.setText("CSU Sports Metrics");
+            image.setHorizontalAlignment(SwingConstants.CENTER);
+            image.setForeground(Color.WHITE);
+            image.setFont(new Font("Arial", Font.BOLD, 28));
+        }
         TopBanner.add(image);
 
         return TopBanner;
@@ -106,11 +129,19 @@ public class MainPanel extends BasePanel {
         TopPanel.setBackground(AppColors.darkTeal);
 
         //Get the location for the image by passing it from the main function
-        ImageIcon imageIcon = new ImageIcon(getClass().getResource(path));
-        //Scale the image
-        Image ScaledIcon = imageIcon.getImage().getScaledInstance(50, 45,Image.SCALE_SMOOTH);
-        ImageIcon ScaledImage = new ImageIcon(ScaledIcon); 
-        JLabel image = new JLabel(ScaledImage);
+        URL iconUrl = getClass().getResource(path);
+        JLabel image = new JLabel();
+        if (iconUrl != null) {
+            ImageIcon imageIcon = new ImageIcon(iconUrl);
+            //Scale the image
+            Image ScaledIcon = imageIcon.getImage().getScaledInstance(50, 45,Image.SCALE_SMOOTH);
+            ImageIcon ScaledImage = new ImageIcon(ScaledIcon); 
+            image.setIcon(ScaledImage);
+        } else {
+            System.err.println("⚠️  icon not found on classpath (" + path + ")");
+            image.setText("icon");
+            image.setForeground(Color.WHITE);
+        }
         //Adding the image to the space we created for the image
         TopPanel.add(image);
 
@@ -154,72 +185,137 @@ public class MainPanel extends BasePanel {
         return Section;
     }
 
+
+        // Handles sign-up button click
     private JPanel SignUpSection()
     {
-    //Create a sign up section to contain all information
+        // Create a sign up section to contain all information
         JPanel SignUpSection = new JPanel();
         SignUpSection.setLayout(new BoxLayout(SignUpSection, BoxLayout.Y_AXIS));
-        SignUpSection.setPreferredSize(new Dimension(450, 240));
-        SignUpSection.setMaximumSize(new Dimension(450, 240));
+        SignUpSection.setPreferredSize(new Dimension(420, 280));
+        SignUpSection.setMaximumSize(new Dimension(420, 280));
         SignUpSection.setBackground(AppColors.darkTeal);
         SignUpSection.setBorder(BorderFactory.createLineBorder(AppColors.lightBlue,4,true));
         SignUpSection.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel SignUpLabel = new JLabel("Or Sign In");
+        JLabel SignUpLabel = new JLabel("Or Sign Up");
         SignUpLabel.setForeground(Color.white);
         SignUpLabel.setFont(new Font("Arial",Font.BOLD,18));
         SignUpLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         SignUpLabel.setBorder(BorderFactory.createEmptyBorder(20, 12, 5, 0));
         SignUpSection.add(SignUpLabel);
 
-        JLabel SignInDescription = new JLabel("Enter your credentials to sign up");
+        JLabel SignInDescription = new JLabel("Create an account to access your dashboard");
         SignInDescription.setForeground(AppColors.lightBlue);
         SignInDescription.setAlignmentX(Component.LEFT_ALIGNMENT);
         SignInDescription.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 0));
         SignUpSection.add(SignInDescription);
 
-        // -- Subpanel for username label and text entry fields --
-        //Email Label
+        // ----- Email label + field -----
         JLabel EmailLabel = new JLabel("Email");
         EmailLabel.setForeground(Color.WHITE);
         EmailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         EmailLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 2, 0));
         SignUpSection.add(EmailLabel);
 
-        JPanel usernamePanel = new JPanel();
-        usernamePanel.setBackground(AppColors.lightGray);
-        usernamePanel.setPreferredSize(new Dimension(400, 22));
-        usernamePanel.setMaximumSize(new Dimension(400, 22));
-        usernamePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        SignUpSection.add(usernamePanel);
+        signUpEmailField = new JTextField();
+        signUpEmailField.setPreferredSize(new Dimension(400, 24));
+        signUpEmailField.setMaximumSize(new Dimension(400, 24));
+        signUpEmailField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        SignUpSection.add(signUpEmailField);
 
-        SignUpSection.add(Box.createVerticalStrut(10));
+        SignUpSection.add(Box.createVerticalStrut(8));
 
-        //Label for the password
+        // ----- Password label + field -----
         JLabel passwordLabel = new JLabel("Password");
         passwordLabel.setForeground(Color.WHITE);
         passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         passwordLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 2, 0));
         SignUpSection.add(passwordLabel);
 
-        JPanel passwordPanel = new JPanel();
-        passwordPanel.setBackground(AppColors.lightGray);
-        passwordPanel.setPreferredSize(new Dimension(400, 22));
-        passwordPanel.setMaximumSize(new Dimension(400, 22));
-        passwordPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        SignUpSection.add(passwordPanel);
+        signUpPasswordField = new JPasswordField();
+        signUpPasswordField.setPreferredSize(new Dimension(400, 24));
+        signUpPasswordField.setMaximumSize(new Dimension(400, 24));
+        signUpPasswordField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        SignUpSection.add(signUpPasswordField);
 
-        JButton SignUpButton = new JButton("Sign in");
+        SignUpSection.add(Box.createVerticalStrut(8));
+
+        // ----- Role label + dropdown -----
+        JLabel roleLabel = new JLabel("Role");
+        roleLabel.setForeground(Color.WHITE);
+        roleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        roleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 2, 0));
+        SignUpSection.add(roleLabel);
+
+        signUpRoleBox = new JComboBox<>(new String[] { "Fan", "Player", "Coach" });
+        signUpRoleBox.setPreferredSize(new Dimension(200, 24));
+        signUpRoleBox.setMaximumSize(new Dimension(200, 24));
+        signUpRoleBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+        SignUpSection.add(signUpRoleBox);
+
+        SignUpSection.add(Box.createVerticalStrut(8));
+
+        // ----- Message label -----
+        signUpMessageLabel = new JLabel(" ");
+        signUpMessageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        SignUpSection.add(signUpMessageLabel);
+        SignUpSection.add(Box.createVerticalStrut(5));
+
+        // ----- Sign Up button -----
+        JButton SignUpButton = new JButton("Sign Up");
         SignUpButton.setBackground(AppColors.lightGray);
-        SignUpButton.setForeground(Color.WHITE);
-        SignUpButton.setPreferredSize(new Dimension(350, 30));
-        SignUpButton.setMaximumSize(new Dimension(350, 30));
+        SignUpButton.setForeground(Color.BLACK);
+        // Keep the button a normal control height so the section has room for the form fields
+        SignUpButton.setPreferredSize(new Dimension(320, 36));
+        SignUpButton.setMaximumSize(new Dimension(320, 36));
         SignUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         SignUpSection.add(SignUpButton);
 
+        // Click handler -> call AuthService.signUp(...)
+        SignUpButton.addActionListener(e -> handleSignUp());
 
         return SignUpSection;
     }
 
-}
 
+     private void handleSignUp() {
+        String email = signUpEmailField.getText().trim();
+        String pwd   = new String(signUpPasswordField.getPassword());
+        String roleText = (String) signUpRoleBox.getSelectedItem();
+
+        // Map dropdown text -> Role enum
+        Role role;
+        if ("Fan".equalsIgnoreCase(roleText)) {
+            role = Role.FAN;
+        } else if ("Player".equalsIgnoreCase(roleText)) {
+            role = Role.PLAYER;
+        } else {
+            role = Role.COACH;
+        }
+
+        try {
+            User u = auth.signUp(email, pwd, role);
+
+            signUpMessageLabel.setForeground(new Color(0, 200, 0));
+            signUpMessageLabel.setText("Account created: " + u.email + " (" + u.role + ")");
+
+            // OPTIONAL: immediately send them to the right panel
+            switch (u.role) {
+                case FAN    -> cardLayout.show(cards, "Fan Page");
+                case PLAYER -> cardLayout.show(cards, "Player Page");
+                case COACH  -> cardLayout.show(cards, "Coach Page");
+            }
+
+        } catch (IllegalArgumentException ex) {
+            // validation error (bad email, weak password, already registered, etc.)
+            signUpMessageLabel.setForeground(Color.RED);
+            signUpMessageLabel.setText(ex.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            signUpMessageLabel.setForeground(Color.RED);
+            signUpMessageLabel.setText("Sign up failed. Please try again.");
+        }
+    }
+
+}

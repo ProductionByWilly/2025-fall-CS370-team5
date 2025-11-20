@@ -1,7 +1,4 @@
 bin/
 *.class
 .DS_Store
-bin/
-*.class
-.DS_Store
 *.session.sql
