@@ -1,3 +1,4 @@
+import Database.FanStatsDAO;
 import Database.Role;
 import Database.User;
 import java.awt.*;
@@ -8,7 +9,6 @@ import javax.swing.table.DefaultTableModel;
     1) Login screen
     2) Dashboard screen (after login)
 */
-
 public class FanPanel extends BasePanel {
 
     // Login related fields
@@ -23,6 +23,7 @@ public class FanPanel extends BasePanel {
 
     // Uses auth backend
     private final AuthService auth = new AuthService();
+    private final FanStatsDAO statsDAO = new FanStatsDAO();
 
 
     // ------------ Dashboard colors & table models ------------
@@ -39,6 +40,16 @@ public class FanPanel extends BasePanel {
     private DefaultTableModel teamTableModel;
     private DefaultTableModel playerTableModel;
     private DefaultTableModel performanceTableModel;
+
+    // Quick stats data
+    private JLabel rankValueLabel;
+    private JLabel rankSubLabel;
+    private JLabel winPctValueLabel;
+    private JLabel winPctSubLabel;
+    private JLabel streakValueLabel;
+    private JLabel streakSubLabel;
+    private JLabel avgPtsValueLabel;
+    private JLabel avgPtsSubLabel;
 
     // Constructor
     public FanPanel(CardLayout cardLayout, JPanel cards) {
@@ -103,7 +114,7 @@ public class FanPanel extends BasePanel {
         loginBox.add(passPanel);
         loginBox.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Message label (for errors, etc.)
+        // Message label (for errors)
         messageLabel = new JLabel(" ");
         messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         messageLabel.setForeground(Color.WHITE);
@@ -157,8 +168,8 @@ public class FanPanel extends BasePanel {
         dashboardBox.add(dashSubtitle);
         dashboardBox.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // ---- Actual dashboard content (quick stats + tabs) ----
-        JPanel innerDashboard = createDashboardPanel();   // <<<<<< this builds what used to be FanDashboardPanel
+        // Actual dashboard content (quick stats + tabs)
+        JPanel innerDashboard = createDashboardPanel();  
         innerDashboard.setAlignmentX(Component.CENTER_ALIGNMENT);
         innerDashboard.setPreferredSize(new Dimension(950, 550));
 
@@ -187,13 +198,17 @@ public class FanPanel extends BasePanel {
 
             // Switch from login state → dashboard state
             dashWelcomeLabel.setText("Welcome, " + u.email + " (Fan)");
+
+            // Load dashboard data from DB
+            loadDashboardData();
+
             loginBox.setVisible(false);
             dashboardBox.setVisible(true);
             revalidate();
             repaint();
 
         } catch (Exception ex) {
-            // "Invalid email or password", etc.
+            // "Invalid email or password"
             showError(ex.getMessage());
         }
     }
@@ -213,6 +228,36 @@ public class FanPanel extends BasePanel {
         panel.add(createDashboardMainContentPanel(), BorderLayout.CENTER);
 
         return panel;
+    }
+
+    // Pulls data from DB and fills dashboard tables
+    private void loadDashboardData() {
+        // First load standings + top players
+        try {
+            // 1. Standings summary (CCAA table)
+            Object[][] standingsRows = statsDAO.fetchStandingsRows();
+            setStandingsData(standingsRows);
+
+            // 2. Top players for a hard-coded season for now
+            Object[][] topPlayersRows = statsDAO.fetchTopPlayersRows("2024-25");
+            setTopPlayersData(topPlayersRows);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Failed to load standings or top players.");
+        }
+
+        // 3. Performance by month 
+        try {
+            Object[][] performanceRows = statsDAO.fetchPerformanceRows();
+            setPerformanceData(performanceRows);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // leave performance tab empty for now
+        }
+
+        // 4. Quick stat cards at top 
+        updateQuickStats();
     }
 
     // HEADER 
@@ -259,29 +304,113 @@ public class FanPanel extends BasePanel {
         statsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 12, 0));
         statsPanel.setOpaque(false);
 
-        statsPanel.add(createStatCard("Favorite Team Rank", "#1", "Up 2 positions"));
-        statsPanel.add(createStatCard("Win Percentage", "71.4%", "+3.2% this month"));
-        statsPanel.add(createStatCard("Current Streak", "W5", "5 wins in a row"));
-        statsPanel.add(createStatCard("Avg Points/Game", "118.2", "League leading"));
+        // Favorite Team Rank
+        rankValueLabel = new JLabel("#1");                // placeholder
+        rankSubLabel   = new JLabel("2024–25 rank");
+        JPanel rankCard = createStatCard("Favorite Team Rank",
+                                        rankValueLabel,
+                                        rankSubLabel);
+        statsPanel.add(rankCard);
+
+        // Win Percentage
+        winPctValueLabel = new JLabel("0.0%");
+        winPctSubLabel   = new JLabel("Conference record");
+        JPanel winCard = createStatCard("Win Percentage",
+                                        winPctValueLabel,
+                                        winPctSubLabel);
+        statsPanel.add(winCard);
+
+        // Current Streak 
+        streakValueLabel = new JLabel("-");
+        streakSubLabel   = new JLabel("Current streak");
+        JPanel streakCard = createStatCard("Current Streak",
+                                        streakValueLabel,
+                                        streakSubLabel);
+        statsPanel.add(streakCard);
+
+        // Avg Points/Game 
+        avgPtsValueLabel = new JLabel("0.0");
+        avgPtsSubLabel   = new JLabel("Avg points per game");
+        JPanel ptsCard = createStatCard("Avg Points/Game",
+                                        avgPtsValueLabel,
+                                        avgPtsSubLabel);
+        statsPanel.add(ptsCard);
 
         return statsPanel;
     }
 
-        private JPanel createStatCard(String label, String value, String subtext) {
+    private void updateQuickStats() {
+        try {
+            final String TEAM_NAME = "Cal State San Marcos";
+
+            // Use the standings table model (already filled by loadDashboardData)
+            if (teamTableModel != null) {
+                int rowCount = teamTableModel.getRowCount();
+                for (int i = 0; i < rowCount; i++) {
+                    Object nameObj = teamTableModel.getValueAt(i, 1); // column 1 = Team
+                    if (nameObj != null) {
+                        String rowName = nameObj.toString().trim();
+                        if (rowName.equalsIgnoreCase(TEAM_NAME)) {
+
+                            // Column mapping:
+                            // 0 = "#", 1 = Team, 2 = Conf W, 3 = Conf L,
+                            // 4 = Conf Win %, 5 = Overall, 6 = Home, 7 = Away, 8 = Neutral, 9 = Streak
+                            Object rankObj    = teamTableModel.getValueAt(i, 0);
+                            Object confWObj   = teamTableModel.getValueAt(i, 2);
+                            Object confLObj   = teamTableModel.getValueAt(i, 3);
+                            Object winPctObj  = teamTableModel.getValueAt(i, 4);
+                            Object streakObj  = teamTableModel.getValueAt(i, 9);
+
+                            // Favorite Team Rank
+                            String rankText = (rankObj != null) ? rankObj.toString() : "?";
+                            rankValueLabel.setText("#" + rankText);
+                            rankSubLabel.setText("2024–2025 CCAA rank");
+
+                            // Win Percentage (conference)
+                            String confWText  = (confWObj != null) ? confWObj.toString() : "0";
+                            String confLText  = (confLObj != null) ? confLObj.toString() : "0";
+                            String winPctText = (winPctObj != null) ? winPctObj.toString() : "0.0";
+
+                            winPctValueLabel.setText(winPctText + "%");
+                            winPctSubLabel.setText(
+                                    String.format("Conf record %s–%s", confWText, confLText)
+                            );
+
+                            // Current Streak
+                            String streakText = (streakObj != null) ? streakObj.toString() : "-";
+                            streakValueLabel.setText(streakText);
+                            streakSubLabel.setText("Current conference streak");
+
+                            break; // done once we find our team
+                        }
+                    }
+                }
+            }
+
+            // Avg Points/Game from games table (may be 0.0 if no games loaded)
+            double avgPts = statsDAO.fetchAvgPointsPerGame();
+            avgPtsValueLabel.setText(String.format("%.1f", avgPts));
+            avgPtsSubLabel.setText("Avg points per game");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // If something fails, don't crash UI
+        }
+    }
+
+    private JPanel createStatCard(String label, JLabel valueLbl, JLabel subLbl) {
         JPanel card = new JPanel();
         card.setLayout(new BorderLayout());
         card.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        card.setBackground(new Color(15, 23, 42)); // slightly darker than outer
+        card.setBackground(new Color(15, 23, 42)); // dark background for cards
 
         JLabel labelLbl = new JLabel(label);
         labelLbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
         labelLbl.setForeground(DASH_MUTED_TEXT);
 
-        JLabel valueLbl = new JLabel(value);
         valueLbl.setFont(new Font("SansSerif", Font.BOLD, 22));
         valueLbl.setForeground(Color.WHITE);
 
-        JLabel subLbl = new JLabel(subtext);
         subLbl.setFont(new Font("SansSerif", Font.PLAIN, 11));
         subLbl.setForeground(DASH_POSITIVE_TEXT);
 
@@ -317,11 +446,11 @@ public class FanPanel extends BasePanel {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
 
-        JLabel title = new JLabel("Western Conference Standings");
+        JLabel title = new JLabel("California Collegiate Athletic Association Standings");
         title.setFont(new Font("SansSerif", Font.BOLD, 16));
         title.setForeground(Color.WHITE);
 
-        JLabel desc = new JLabel("Current season standings");
+        JLabel desc = new JLabel("2024-2025 season standings");
         desc.setFont(new Font("SansSerif", Font.PLAIN, 12));
         desc.setForeground(DASH_MUTED_TEXT);
 
@@ -332,18 +461,24 @@ public class FanPanel extends BasePanel {
         header.add(title);
         header.add(desc);
 
-        String[] columns = {"#", "Team", "Wins", "Losses", "Win %", "Streak"};
-        Object[][] data = {
-                {1, "Phoenix Suns", 45, 18, "71.4", "W5"},
-                {2, "Lakers",        42, 21, "66.7", "L2"},
-                {3, "Warriors",      40, 23, "63.5", "W3"},
-                {4, "Clippers",      38, 25, "60.3", "W1"}
+        String[] columns = {
+            "#",
+            "Team",
+            "Conf W",
+            "Conf L",
+            "Conf Win %",
+            "Overall",
+            "Home",
+            "Away",
+            "Neutral",
+            "Streak"
         };
 
-        teamTableModel = new DefaultTableModel(data, columns) {
+        // Start with an empty model, real data is loaded from the database
+        teamTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // read-only
+                return false;
             }
         };
 
@@ -354,6 +489,8 @@ public class FanPanel extends BasePanel {
 
         panel.add(header, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
+
+        teamTable.getColumnModel().getColumn(1).setPreferredWidth(180);
 
         return panel;
     }
@@ -379,14 +516,9 @@ public class FanPanel extends BasePanel {
         header.add(desc);
 
         String[] columns = {"#", "Player", "Team", "PPG", "RPG", "APG", "Rating"};
-        Object[][] data = {
-                {1, "Kevin Durant",   "Phoenix Suns", 28.5, 7.2, 5.8, 95},
-                {2, "LeBron James",   "Lakers",       26.3, 8.1, 7.5, 94},
-                {3, "Stephen Curry",  "Warriors",     27.8, 5.2, 6.3, 93},
-                {4, "Kawhi Leonard",  "Clippers",     24.1, 6.8, 4.2, 91}
-        };
 
-        playerTableModel = new DefaultTableModel(data, columns) {
+        // Start with an empty model; real data is loaded from the database
+        playerTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -425,16 +557,9 @@ public class FanPanel extends BasePanel {
         header.add(desc);
 
         String[] columns = {"Month", "Points", "Wins"};
-        Object[][] data = {
-                {"Oct", 108,  8},
-                {"Nov", 112, 10},
-                {"Dec", 115, 12},
-                {"Jan", 110,  9},
-                {"Feb", 118, 11},
-                {"Mar", 120, 13}
-        };
 
-        performanceTableModel = new DefaultTableModel(data, columns) {
+        // Start with an empty model; real data is loaded from the database
+        performanceTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -453,7 +578,7 @@ public class FanPanel extends BasePanel {
     }
 
 
-    //  PUBLIC HOOKS (for later DB integration)
+    //  PUBLIC HOOKS for  DB integration
     public void setStandingsData(Object[][] rows) {
         replaceTableData(teamTableModel, rows);
     }
