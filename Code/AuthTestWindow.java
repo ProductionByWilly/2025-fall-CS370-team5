@@ -1,3 +1,4 @@
+import Database.User;
 import java.awt.*;
 import javax.swing.*;
 
