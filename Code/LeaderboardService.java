@@ -3,6 +3,7 @@ import java.sql.SQLException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import Database.Database;
 
 public class LeaderboardService {
     public List<PlayerRecord> getLeaderboard() throws SQLException {
