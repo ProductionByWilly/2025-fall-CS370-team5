@@ -5,11 +5,13 @@ public class PollsPanel extends BasePanel {
     public PollsPanel(CardLayout cardLayout, JPanel cards) {
         super("Polls Page", cardLayout, cards);
 
+        // Page layout setup
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(AppColors.darkTeal);
 
         add(Box.createRigidArea(new Dimension(0, 20)));
 
+        // Page title
         JLabel title = new JLabel("Fan Polls");
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 24f));
