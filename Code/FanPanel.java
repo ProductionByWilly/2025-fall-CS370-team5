@@ -60,71 +60,107 @@ public class FanPanel extends BasePanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(AppColors.darkTeal);
 
-        // Top Title for entire Panel
-        JLabel title = new JLabel("Fan Dashboard");
-        title.setForeground(Color.WHITE);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 22f));
-
-        add(Box.createRigidArea(new Dimension(0, 20)));
-        add(title);
-        add(Box.createRigidArea(new Dimension(0, 20)));
+        // Small top spacer 
+        add(Box.createRigidArea(new Dimension(0, 10)));
 
         // LOGIN BOX (State 1)
-        loginBox = new JPanel();
-        loginBox.setLayout(new BoxLayout(loginBox, BoxLayout.Y_AXIS));
+        loginBox = new JPanel(new GridBagLayout());  // center the card
         loginBox.setBackground(AppColors.darkTeal);
         loginBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // White card that holds image + form side-by-side
+        JPanel loginCard = new JPanel(new BorderLayout(24, 0));
+        loginCard.setBackground(Color.WHITE);
+        loginCard.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        loginCard.setPreferredSize(new Dimension(900, 340));
+
+        // LEFT SIDE: image + fan info 
+        JPanel leftPanel = new JPanel(new BorderLayout(0, 12));
+        leftPanel.setBackground(Color.WHITE);
+
+        // Image (adjust path and size as needed)
+        ImageIcon rawIcon = new ImageIcon(
+                getClass().getResource("/Resources/images/fans.jpg"));   // pulls file from classpath
+        Image scaled = rawIcon.getImage().getScaledInstance(340, 200, Image.SCALE_SMOOTH);
+        JLabel imageLabel = new JLabel(new ImageIcon(scaled));
+        imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Info about what fans can do
+        JLabel infoLabel = new JLabel(
+            "<html><b>As a CSU fan, you can:</b><br>" +
+            "• View CCAA standings <br>" +
+            "• Track win/loss trends for the Cougars<br>" +
+            "• See top player performance stats<br>" +
+            "• Compare CCAA Team Stats" +
+            "</html>"
+        );
+        infoLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
+
+        leftPanel.add(imageLabel, BorderLayout.CENTER);
+        leftPanel.add(infoLabel, BorderLayout.SOUTH);
+
+        // RIGHT SIDE: login form
+        JPanel rightPanel = new JPanel();
+        rightPanel.setBackground(Color.WHITE);
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+
+        // Title
+        JLabel loginTitle = new JLabel("Fan Login");
+        loginTitle.setFont(loginTitle.getFont().deriveFont(Font.BOLD, 22f));
+        loginTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rightPanel.add(loginTitle);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
 
         // Email row 
         JPanel emailPanel = new JPanel();
         emailPanel.setLayout(new BoxLayout(emailPanel, BoxLayout.X_AXIS));
-        emailPanel.setBackground(AppColors.darkTeal);
+        emailPanel.setBackground(Color.WHITE);
 
         JLabel emailLabel = new JLabel("Email: ");
-        emailLabel.setForeground(Color.WHITE);
+        emailLabel.setForeground(Color.BLACK);
 
-        emailField = new JTextField(20);
-        emailField.setMaximumSize(new Dimension(250, 25));
+        emailField = new JTextField(30);
+        emailField.setMaximumSize(new Dimension(400, 25));
 
         emailPanel.add(emailLabel);
         emailPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         emailPanel.add(emailField);
-        emailPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        emailPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        loginBox.add(emailPanel);
-        loginBox.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(emailPanel);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         // Password row 
         JPanel passPanel = new JPanel();
         passPanel.setLayout(new BoxLayout(passPanel, BoxLayout.X_AXIS));
-        passPanel.setBackground(AppColors.darkTeal);
+        passPanel.setBackground(Color.WHITE);
 
         JLabel passLabel = new JLabel("Password: ");
-        passLabel.setForeground(Color.WHITE);
+        passLabel.setForeground(Color.BLACK);
 
-        passwordField = new JPasswordField(20);
-        passwordField.setMaximumSize(new Dimension(250, 25));
+        passwordField = new JPasswordField(30);
+        passwordField.setMaximumSize(new Dimension(400, 25));
 
         passPanel.add(passLabel);
         passPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         passPanel.add(passwordField);
-        passPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        loginBox.add(passPanel);
-        loginBox.add(Box.createRigidArea(new Dimension(0, 15)));
+        rightPanel.add(passPanel);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 15)));
 
         // Message label (for errors)
         messageLabel = new JLabel(" ");
-        messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        messageLabel.setForeground(Color.WHITE);
-        loginBox.add(messageLabel);
-        loginBox.add(Box.createRigidArea(new Dimension(0, 15)));
+        messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        messageLabel.setForeground(Color.RED); // stays red on error
+        rightPanel.add(messageLabel);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 15)));
 
         // Buttons row (Login + Back) 
         JPanel buttonRow = new JPanel();
         buttonRow.setLayout(new BoxLayout(buttonRow, BoxLayout.X_AXIS));
-        buttonRow.setBackground(AppColors.darkTeal);
+        buttonRow.setBackground(Color.WHITE);
 
         JButton loginButton = new JButton("Login");
         JButton backButton = new JButton("Back to Main");
@@ -135,9 +171,20 @@ public class FanPanel extends BasePanel {
         buttonRow.add(loginButton);
         buttonRow.add(Box.createRigidArea(new Dimension(20, 0)));
         buttonRow.add(backButton);
-        buttonRow.setAlignmentX(Component.CENTER_ALIGNMENT);
+        buttonRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        loginBox.add(buttonRow);
+        rightPanel.add(buttonRow);
+        rightPanel.add(Box.createVerticalGlue());
+
+        // Put left and right into card
+        loginCard.add(leftPanel, BorderLayout.WEST);
+        loginCard.add(rightPanel, BorderLayout.CENTER);
+
+        // Center the card on the blue background
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        loginBox.add(loginCard, gbc);
 
         // Add login box to main panel
         add(loginBox);
@@ -218,6 +265,32 @@ public class FanPanel extends BasePanel {
         messageLabel.setText(msg);
     }
 
+    private void handleLogout() {
+        // Clear login fields and error message
+        if (emailField != null) {
+            emailField.setText("");
+        }
+        if (passwordField != null) {
+            passwordField.setText("");
+        }
+        if (messageLabel != null) {
+            messageLabel.setText(" ");
+        }
+
+        // Reset view states inside this panel
+        if (loginBox != null) {
+            loginBox.setVisible(true);
+        }
+        if (dashboardBox != null) {
+            dashboardBox.setVisible(false);
+        }
+
+        // Switch back to the main/home panel in the CardLayout
+        cardLayout.show(cards, "Home Page");
+    }
+
+
+
     //  DASHBOARD UI 
     private JPanel createDashboardPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -262,10 +335,17 @@ public class FanPanel extends BasePanel {
 
     // HEADER 
     private JPanel createDashboardHeaderPanel() {
-        JPanel header = new JPanel();
-        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.setBorder(BorderFactory.createEmptyBorder(4, 0, 12, 0));
-        header.setOpaque(false);
+
+        // Outer header with left (titles) + right (logout button)
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.setBorder(BorderFactory.createEmptyBorder(4, 0, 12, 0));
+        outer.setOpaque(false);
+
+        // Left side: title + subtitle stacked vertically
+        JPanel left = new JPanel();
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        left.setOpaque(false);
+
 
         JLabel title = new JLabel("Fan Overview");
         title.setFont(new Font("SansSerif", Font.BOLD, 20));
@@ -275,11 +355,28 @@ public class FanPanel extends BasePanel {
         subtitle.setFont(new Font("SansSerif", Font.PLAIN, 14));
         subtitle.setForeground(DASH_MUTED_TEXT);
 
-        header.add(title);
-        header.add(Box.createVerticalStrut(4));
-        header.add(subtitle);
+        left.add(title);
+        left.add(Box.createVerticalStrut(4));
+        left.add(subtitle);
 
-        return header;
+        // Right side: Polls + Logout button
+        JButton pollsButton = new JButton("Polls");
+        pollsButton.addActionListener(e -> cardLayout.show(cards, "Polls Page"));
+
+
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.addActionListener(e -> handleLogout());
+
+        JPanel right = new JPanel();
+        right.setOpaque(false);
+        right.add(pollsButton);
+        right.add(Box.createHorizontalStrut(8));
+        right.add(logoutButton);
+
+        outer.add(left, BorderLayout.WEST);
+        outer.add(right, BorderLayout.EAST);
+
+        return outer;
     }
 
     // MAIN CONTENT (STATS + TABS)
