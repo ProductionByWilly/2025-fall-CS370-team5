@@ -31,6 +31,8 @@ public class SportsMetrics {
         // ------- Player Panel System Display  -------
         cards.add(new PlayerPanel(cardLayout,cards),"Player Page");
 
+        // ------- Polls Panel System Display  -------
+        cards.add(new PollsPanel(cardLayout, cards), "Polls Page");
 
         frame.add(cards,BorderLayout.CENTER);
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);  //Once the application is opened maximize the window

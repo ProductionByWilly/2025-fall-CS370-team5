@@ -1,3 +1,5 @@
+import Database.Role;
+import Database.User;
 import java.awt.*;
 import java.net.URL;
 import javax.swing.*;
