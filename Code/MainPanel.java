@@ -1,3 +1,5 @@
+import Database.Role;
+import Database.User;
 import java.awt.*;
 import java.net.URL;
 import javax.swing.*;
@@ -39,23 +41,24 @@ public class MainPanel extends BasePanel {
         String FanDashboardLabel = "Fan Dashboard";
         String FanDescription = "<html>Track favorite teams, participate in polls and view the leaderboard</html>";
         String FanButtonLabel = "Continue as Fan";
-        String FanSymbolPath = "/Resources/images/FanIcon.jpg";
+        String FanSymbolPath = "/Resources/images/FanImage.png";
 
         String CoachDashboardLabel = "Coach Dashboard";
         String CoachDescription = "<html>Manage team, view analytics, and manage stats</html>";
         String CoachButtonLabel = "Continue as Coach";
-        String CoachSymbolPath = "/Resources/images/TrophyIcon.png";
+        String CoachSymbolPath = "/Resources/images/CoachImage.png";
 
         String PlayerDashboardLabel = "Player Dashboard";
         String PlayerDescription = "<html>View and filter personal stats,view performance metrics and efficiency ratings</html>";
         String PlayerButtonLabel = "Continue as Player";
+        String PlayerSymbolPath = "/Resources/images/TrophyIcon.png";
         
         sectionsPanel.add(CreateSection(FanDashboardLabel, FanDescription, FanButtonLabel, 
                                        AppColors.softBlue, "Fan Page", FanSymbolPath));
         sectionsPanel.add(CreateSection(CoachDashboardLabel, CoachDescription, CoachButtonLabel, 
                                        AppColors.green, "Coach Page", CoachSymbolPath));
         sectionsPanel.add(CreateSection(PlayerDashboardLabel, PlayerDescription, PlayerButtonLabel, 
-                                       AppColors.magenta, "Player Page", CoachSymbolPath));
+                                       AppColors.magenta, "Player Page", PlayerSymbolPath));
         
         contentPanel.add(sectionsPanel);
         contentPanel.add(Box.createVerticalStrut(30));
@@ -74,30 +77,29 @@ public class MainPanel extends BasePanel {
         TopBanner.setPreferredSize(new Dimension(0,200));
         TopBanner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
 
-        //Adds the title to the page
-        JLabel Title = new JLabel("CSU Sports Metrics",SwingConstants.CENTER);
-        Title.setForeground(Color.white);
-        Title.setFont(new Font("Arial",Font.BOLD,50));
-        TopBanner.add(Title);
-        
         //Get the location for the image
         URL bannerUrl = getClass().getResource("/Resources/images/banner.png");
         JLabel image = new JLabel();
         if (bannerUrl != null) {
             ImageIcon imageIcon = new ImageIcon(bannerUrl);
-            //Scale the image to the size we need to cover the banner
-            Image ScaledIcon = imageIcon.getImage().getScaledInstance(1535, 200,Image.SCALE_SMOOTH);
-            ImageIcon ScaledImage = new ImageIcon(ScaledIcon);
-            //Add an image to the top banner
-            image.setIcon(ScaledImage);
+            image.setIcon(imageIcon);
+
+            // Set the text on the same label
+            image.setText("CSU Sports Metrics");   
+            image.setHorizontalAlignment(SwingConstants.CENTER);
+            image.setVerticalAlignment(SwingConstants.CENTER);
+            image.setForeground(Color.WHITE);
+            image.setFont(new Font("Arial", Font.BOLD, 50));
+            image.setHorizontalTextPosition(SwingConstants.CENTER);
+            image.setVerticalTextPosition(SwingConstants.CENTER);
         } else {
             System.err.println("⚠️  banner.png not found on classpath (/Resources/images/banner.png)");
             image.setText("CSU Sports Metrics");
             image.setHorizontalAlignment(SwingConstants.CENTER);
             image.setForeground(Color.WHITE);
-            image.setFont(new Font("Arial", Font.BOLD, 28));
+            image.setFont(new Font("Arial", Font.BOLD, 50));
         }
-        TopBanner.add(image);
+        TopBanner.add(image, BorderLayout.CENTER);
 
         return TopBanner;
     }
@@ -120,12 +122,12 @@ public class MainPanel extends BasePanel {
         //Create a section for the fan section or a container with some information
         JPanel Section = new JPanel();
         Section.setLayout(new BoxLayout(Section, BoxLayout.Y_AXIS)); // used for absolute positioning
-        Section.setPreferredSize(new Dimension(350, 200)); //X - positon, Y - height, width - width of the section, height - height of the section
+        Section.setPreferredSize(new Dimension(390, 180)); //X - positon, Y - height, width - width of the section, height - height of the section
         Section.setBackground(AppColors.darkTeal);
         Section.setBorder(BorderFactory.createLineBorder(BorderAndButtonColor,4,true));
 
         //Create a space for the image to be placed
-        JPanel TopPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        JPanel TopPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
         TopPanel.setBackground(AppColors.darkTeal);
 
         //Get the location for the image by passing it from the main function
@@ -153,7 +155,7 @@ public class MainPanel extends BasePanel {
         Dashboard.setForeground(Color.white);
         Dashboard.setFont(new Font("Arial",Font.BOLD,18));
         Dashboard.setAlignmentX(Component.LEFT_ALIGNMENT);
-        Dashboard.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        Dashboard.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 180));
         Section.add(Dashboard);
 
 
@@ -161,39 +163,44 @@ public class MainPanel extends BasePanel {
         JLabel Description = new JLabel(DescriptionLabel);
         Description.setForeground(AppColors.lightBlue);
         Description.setAlignmentX(Component.LEFT_ALIGNMENT);
-        Description.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10)); //The width needs enough space to incorporate the entire text
+        Description.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 60)); //The width needs enough space to incorporate the entire text
         Section.add(Description);
 
-        Section.add(Box.createVerticalGlue());
+        Section.add(Box.createVerticalStrut(10));
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
         buttonPanel.setBackground(AppColors.darkTeal);
+        buttonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+
 
         // Creating the fan button for the main panel
         JButton Button = new JButton(ButtonLabel);
         //Adds a border to the button
         Button.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2, true));
+        Button.setBorder(BorderFactory.createEmptyBorder(5,0,5,15));//internal padding
         //Change the color of the button word
         Button.setForeground(Color.white);
         //Change the Color of the button
         Button.setBackground(BorderAndButtonColor);
         //Add the fan button to the container storing the buttons horizontally in the page
-        Button.setPreferredSize(new Dimension(250, 35));
+        Button.setMaximumSize(new Dimension(300, 40));
         Button.addActionListener(e -> cardLayout.show(cards,CardName));
         Section.add(Button);
+
+        Section.add(Box.createVerticalStrut(30));
         //Add the text into the fan section/container
         return Section;
     }
 
 
-        // Handles sign-up button click
+    // Create a section for the signup
     private JPanel SignUpSection()
     {
         // Create a sign up section to contain all information
         JPanel SignUpSection = new JPanel();
         SignUpSection.setLayout(new BoxLayout(SignUpSection, BoxLayout.Y_AXIS));
-        SignUpSection.setPreferredSize(new Dimension(420, 280));
-        SignUpSection.setMaximumSize(new Dimension(420, 280));
+        SignUpSection.setPreferredSize(new Dimension(450, 300));
+        SignUpSection.setMaximumSize(new Dimension(450, 300));
         SignUpSection.setBackground(AppColors.darkTeal);
         SignUpSection.setBorder(BorderFactory.createLineBorder(AppColors.lightBlue,4,true));
         SignUpSection.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -202,26 +209,26 @@ public class MainPanel extends BasePanel {
         SignUpLabel.setForeground(Color.white);
         SignUpLabel.setFont(new Font("Arial",Font.BOLD,18));
         SignUpLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        SignUpLabel.setBorder(BorderFactory.createEmptyBorder(20, 12, 5, 0));
+        SignUpLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
         SignUpSection.add(SignUpLabel);
 
-        JLabel SignInDescription = new JLabel("Create an account to access your dashboard");
+        JLabel SignInDescription = new JLabel("Enter your credentials to sign up");
         SignInDescription.setForeground(AppColors.lightBlue);
         SignInDescription.setAlignmentX(Component.LEFT_ALIGNMENT);
-        SignInDescription.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 0));
+        SignInDescription.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 150));
         SignUpSection.add(SignInDescription);
 
         // ----- Email label + field -----
         JLabel EmailLabel = new JLabel("Email");
         EmailLabel.setForeground(Color.WHITE);
         EmailLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        EmailLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 2, 0));
+        EmailLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 2, 150));
         SignUpSection.add(EmailLabel);
 
         signUpEmailField = new JTextField();
-        signUpEmailField.setPreferredSize(new Dimension(400, 24));
-        signUpEmailField.setMaximumSize(new Dimension(400, 24));
-        signUpEmailField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signUpEmailField.setPreferredSize(new Dimension(350, 24));
+        signUpEmailField.setMaximumSize(new Dimension(350, 24));
+        signUpEmailField.setAlignmentX(Component.LEFT_ALIGNMENT);
         SignUpSection.add(signUpEmailField);
 
         SignUpSection.add(Box.createVerticalStrut(8));
@@ -229,14 +236,14 @@ public class MainPanel extends BasePanel {
         // ----- Password label + field -----
         JLabel passwordLabel = new JLabel("Password");
         passwordLabel.setForeground(Color.WHITE);
-        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        passwordLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 2, 0));
+        passwordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passwordLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 2, 0));
         SignUpSection.add(passwordLabel);
 
         signUpPasswordField = new JPasswordField();
-        signUpPasswordField.setPreferredSize(new Dimension(400, 24));
-        signUpPasswordField.setMaximumSize(new Dimension(400, 24));
-        signUpPasswordField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signUpPasswordField.setPreferredSize(new Dimension(350, 24));
+        signUpPasswordField.setMaximumSize(new Dimension(350, 24));
+        signUpPasswordField.setAlignmentX(Component.LEFT_ALIGNMENT);
         SignUpSection.add(signUpPasswordField);
 
         SignUpSection.add(Box.createVerticalStrut(8));
@@ -244,14 +251,14 @@ public class MainPanel extends BasePanel {
         // ----- Role label + dropdown -----
         JLabel roleLabel = new JLabel("Role");
         roleLabel.setForeground(Color.WHITE);
-        roleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        roleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         roleLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 2, 0));
         SignUpSection.add(roleLabel);
 
         signUpRoleBox = new JComboBox<>(new String[] { "Fan", "Player", "Coach" });
         signUpRoleBox.setPreferredSize(new Dimension(200, 24));
         signUpRoleBox.setMaximumSize(new Dimension(200, 24));
-        signUpRoleBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+        signUpRoleBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         SignUpSection.add(signUpRoleBox);
 
         SignUpSection.add(Box.createVerticalStrut(8));
@@ -262,15 +269,31 @@ public class MainPanel extends BasePanel {
         SignUpSection.add(signUpMessageLabel);
         SignUpSection.add(Box.createVerticalStrut(5));
 
+        SignUpSection.add(Box.createVerticalStrut(5)); // add spacing between the password panel and the button
+
+        //horizontal panel to center the button
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setBackground(AppColors.darkTeal);
+        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        buttonPanel.setMaximumSize(new Dimension(300, 30));
+
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(Box.createHorizontalStrut(5)); // Push things to the right
+
+
         // ----- Sign Up button -----
         JButton SignUpButton = new JButton("Sign Up");
         SignUpButton.setBackground(AppColors.lightGray);
-        SignUpButton.setForeground(Color.BLACK);
+        SignUpButton.setForeground(Color.WHITE);
         // Keep the button a normal control height so the section has room for the form fields
-        SignUpButton.setPreferredSize(new Dimension(320, 36));
-        SignUpButton.setMaximumSize(new Dimension(320, 36));
+        SignUpButton.setPreferredSize(new Dimension(260, 30));
+        SignUpButton.setMaximumSize(new Dimension(260, 30));
         SignUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        SignUpSection.add(SignUpButton);
+        buttonPanel.add(SignUpButton);
+        buttonPanel.add(Box.createHorizontalGlue()); 
+        SignUpSection.add(buttonPanel);
+
 
         // Click handler -> call AuthService.signUp(...)
         SignUpButton.addActionListener(e -> handleSignUp());

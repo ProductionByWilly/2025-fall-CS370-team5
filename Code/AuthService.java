@@ -1,3 +1,6 @@
+import Database.Role;
+import Database.User;
+import Database.UserDAO;
 import org.mindrot.jbcrypt.BCrypt;
 import java.util.Optional;
 
