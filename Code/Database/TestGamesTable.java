@@ -51,7 +51,32 @@ public class TestGamesTable {
                             id, date, opponent, venue, result, teamScore, oppScore, attendance, notes == null ? "" : notes);
                 }
             }
+            // Query the player_season_stats table
+            String sqlPlayers = "SELECT * FROM player_season_stats";
 
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery(sqlPlayers)) {
+
+                System.out.println("\n🏀 Player Season Stats Table Data:");
+                System.out.println("---------------------------------------------------------------");
+
+                // Get metadata to print column headers
+                int columnCount = rs.getMetaData().getColumnCount();
+                for (int i = 1; i <= columnCount; i++) {
+                    System.out.printf("%-20s", rs.getMetaData().getColumnName(i));
+                }
+                System.out.println();
+                System.out.println("---------------------------------------------------------------");
+
+                // Print each row
+                while (rs.next()) {
+                    for (int i = 1; i <= columnCount; i++) {
+                        Object val = rs.getObject(i);
+                        System.out.printf("%-20s", val == null ? "" : val.toString());
+                    }
+                    System.out.println();
+                }
+            }
             conn.close();
             System.out.println("\n✅ Query finished successfully.");
 
