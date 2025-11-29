@@ -16,7 +16,7 @@ public class CoachPanelTest {
             CardLayout layout = new CardLayout();
             JPanel cards = new JPanel(layout);
 
-            // Create your CoachPanel
+            // Create CoachPanel
             CoachPanel coachPanel = new CoachPanel(layout, cards);
 
             // Add to cards so BasePanel works correctly

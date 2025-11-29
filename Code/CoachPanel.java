@@ -8,13 +8,30 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.table.TableRowSorter;
 import Database.Database;
+import Database.User;
+import Database.Role;
 
 public class CoachPanel extends BasePanel {
     private static final Color BACKGROUND = new Color(15, 23, 42);
     private static final Color MUTED_TEXT = new Color(148, 163, 184);
     private static final Color POSITIVE_TEXT = new Color(34, 197, 94);
+
     private DefaultTableModel rosterModel;
     private JTable rosterTable;
+
+    // Login related fields
+    private JTextField emailField;
+    private JPasswordField passwordField;
+    private JLabel messageLabel;
+
+    // Panels for login/dashboard
+    private JPanel loginBox;
+    private JPanel dashboardBox;
+    private JLabel dashWelcomeLabel;
+
+    // Auth service
+    private final AuthService auth = new AuthService();
+
     // Quick stat cards
     private JLabel teamRecordValueLabel;
     private JLabel winRateValueLabel;
@@ -22,19 +39,15 @@ public class CoachPanel extends BasePanel {
     private JLabel averagePointsValueLabel;
 
     public CoachPanel(CardLayout cardLayout, JPanel cards) {
-        super("Coach Dashboard", cardLayout, cards); // <- required by BasePanel
-        setLayout(new BorderLayout());
-        setBackground(BACKGROUND);
+        super("Coach Page", cardLayout, cards);
 
-        // Header
-        add(createHeaderPanel(), BorderLayout.NORTH);
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBackground(AppColors.darkTeal);
 
-        // Main content: quick stats + tabs
-        add(createMainContentPanel(), BorderLayout.CENTER);
-
-        // Load DB data
-        loadDashboardData();
+        createLoginPanel();             // builds loginBox
+        createDashboardPanelWrapper();  // builds dashboardBox
     }
+
 
     // ---------------- HEADER ----------------
     private JPanel createHeaderPanel() {
@@ -422,6 +435,145 @@ public class CoachPanel extends BasePanel {
             averagePointsValueLabel.setText("ERROR");
         }
         }
+    // ---------------- CREATE LOGIN PANEL ----------------
+    private void createLoginPanel() {
+        loginBox = new JPanel(new GridBagLayout());
+        loginBox.setBackground(AppColors.darkTeal);
+        loginBox.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel loginCard = new JPanel(new BorderLayout(24, 0));
+        loginCard.setBackground(Color.WHITE);
+        loginCard.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        loginCard.setPreferredSize(new Dimension(900, 340));
+
+        // Left: info
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBackground(Color.WHITE);
+        JLabel infoLabel = new JLabel("<html><b>As a CSU coach, you can:</b><br>" +
+                "• Manage teams<br>• View analytics<br>• Track player stats</html>");
+        infoLabel.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        leftPanel.add(infoLabel, BorderLayout.CENTER);
+
+        // Right: login form
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.setBackground(Color.WHITE);
+
+        JLabel loginTitle = new JLabel("Coach Login");
+        loginTitle.setFont(loginTitle.getFont().deriveFont(Font.BOLD, 22f));
+        loginTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rightPanel.add(loginTitle);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Email
+        emailField = new JTextField(30);
+        emailField.setMaximumSize(new Dimension(400, 25));
+        JLabel emailLabel = new JLabel("Email: ");
+        emailLabel.setForeground(Color.BLACK);
+        rightPanel.add(emailLabel);
+        rightPanel.add(emailField);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Password
+        passwordField = new JPasswordField(30);
+        passwordField.setMaximumSize(new Dimension(400, 25));
+        JLabel passLabel = new JLabel("Password: ");
+        passLabel.setForeground(Color.BLACK);
+        rightPanel.add(passLabel);
+        rightPanel.add(passwordField);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Message label
+        messageLabel = new JLabel(" ");
+        messageLabel.setForeground(Color.RED);
+        rightPanel.add(messageLabel);
+
+        // Buttons
+        JButton loginButton = new JButton("Login");
+        JButton backButton = new JButton("Back to Main");
+        loginButton.addActionListener(e -> handleLogin());
+        backButton.addActionListener(e -> cardLayout.show(cards, "Home Page"));
+
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonRow.add(loginButton);
+        buttonRow.add(backButton);
+        rightPanel.add(buttonRow);
+
+        loginCard.add(leftPanel, BorderLayout.WEST);
+        loginCard.add(rightPanel, BorderLayout.CENTER);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        loginBox.add(loginCard, gbc);
+
+        add(loginBox);
+    }
+    private void createDashboardPanelWrapper() {
+        dashboardBox = new JPanel(new BorderLayout());
+        dashboardBox.setBackground(AppColors.darkTeal);
+        dashboardBox.setVisible(false);
+
+        // Top panel with welcome label + logout button
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
+
+        dashWelcomeLabel = new JLabel("Welcome, Coach!");
+        dashWelcomeLabel.setForeground(Color.WHITE);
+        dashWelcomeLabel.setFont(new Font("SansSerif", Font.BOLD, 20));
+        dashWelcomeLabel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        JButton logoutBtn = new JButton("Logout");
+        logoutBtn.addActionListener(e -> handleLogout());
+
+        topPanel.add(dashWelcomeLabel, BorderLayout.WEST);
+        topPanel.add(logoutBtn, BorderLayout.EAST);
+
+        dashboardBox.add(topPanel, BorderLayout.NORTH);
+
+        // Full dashboard content
+        JPanel fullDashboard = new JPanel(new BorderLayout());
+        fullDashboard.setOpaque(false);
+        fullDashboard.add(createHeaderPanel(), BorderLayout.NORTH);
+        fullDashboard.add(createMainContentPanel(), BorderLayout.CENTER);
+
+        dashboardBox.add(fullDashboard, BorderLayout.CENTER);
+
+        add(dashboardBox);
+    }
+    private void handleLogin() {
+        String email = emailField.getText().trim();
+        String pwd = new String(passwordField.getPassword());
+
+        try {
+            User u = auth.signIn(email, pwd);
+
+            if (u.role != Role.COACH) {
+                messageLabel.setText("This account is not a Coach account."); // <-- fix here
+                return;
+            }
+
+            dashWelcomeLabel.setText("Welcome, " + u.email + " (Coach)");
+
+            // Load live stats after login
+            loadDashboardData();
+
+            loginBox.setVisible(false);
+            dashboardBox.setVisible(true);
+
+            revalidate();
+            repaint();
+
+        } catch (Exception ex) {
+            messageLabel.setText("Invalid email or password");
+        }
+    }
+    private void handleLogout() {
+        emailField.setText("");
+        passwordField.setText("");
+        messageLabel.setText(" ");
+
+        dashboardBox.setVisible(false);
+        loginBox.setVisible(true);
+    }
 }
-
-
