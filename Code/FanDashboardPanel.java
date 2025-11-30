@@ -148,20 +148,17 @@ public class FanDashboardPanel extends JPanel {
         header.add(title);
         header.add(desc);
 
-        String[] columns = {"#", "Team", "Wins", "Losses", "Win %", "Streak"};
-        Object[][] data = {
-                {1, "Phoenix Suns", 45, 18, "71.4", "W5"},
-                {2, "Lakers", 42, 21, "66.7", "L2"},
-                {3, "Warriors", 40, 23, "63.5", "W3"},
-                {4, "Clippers", 38, 25, "60.3", "W1"}
+        String[] columns = {
+        "Month",
+        "Avg Points",
+        "W-L",
+        "Avg Margin",
+        "High",
+        "Low",
+        "Opp Avg"
         };
 
-        teamTableModel = new DefaultTableModel(data, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // read-only
-            }
-        };
+
 
         teamTable = new JTable(teamTableModel);
         teamTable.setFillsViewportHeight(true);
@@ -203,12 +200,12 @@ public class FanDashboardPanel extends JPanel {
                 {4, "Kawhi Leonard", "Clippers", 24.1, 6.8, 4.2, 91}
         };
 
-        playerTableModel = new DefaultTableModel(data, columns) {
+        performanceTableModel = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
-            }
-        };
+                }
+            };
 
         playerTable = new JTable(playerTableModel);
         playerTable.setFillsViewportHeight(true);

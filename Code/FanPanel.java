@@ -4,6 +4,9 @@ import Database.User;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
+import Database.AuthService;
 
 /* Fan Panel page has two states: 
     1) Login screen
@@ -50,6 +53,14 @@ public class FanPanel extends BasePanel {
     private JLabel streakSubLabel;
     private JLabel avgPtsValueLabel;
     private JLabel avgPtsSubLabel;
+
+    // --- Performance insight card labels ---
+    private JLabel bestMonthLabel;
+    private JLabel bestMonthDetailLabel;
+    private JLabel longestStreakLabel;
+    private JLabel longestStreakDetailLabel;
+    private JLabel homeAwayLabel;
+    private JLabel homeAwayDetailLabel;
 
     // Constructor
     public FanPanel(CardLayout cardLayout, JPanel cards) {
@@ -331,6 +342,14 @@ public class FanPanel extends BasePanel {
 
         // 4. Quick stat cards at top 
         updateQuickStats();
+
+        // 5. Level-2 performance insight cards
+        try {
+            FanStatsDAO.PerformanceInsights info = statsDAO.fetchPerformanceInsights();
+            updatePerformanceInsights(info);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // HEADER 
@@ -495,6 +514,41 @@ public class FanPanel extends BasePanel {
         }
     }
 
+
+    // Called by FanPanel after it queries FanStatsDAO
+    public void updatePerformanceInsights(FanStatsDAO.PerformanceInsights info) {
+        if (info == null) {
+            return;
+        }
+
+        //Best Month card
+        if (info.bestMonthLabel != null) {
+            bestMonthLabel.setText(info.bestMonthLabel);
+
+            String record = info.bestMonthWins + "-" + info.bestMonthLosses;
+            String pctStr = String.format("%.1f%%", info.bestMonthWinPct * 100.0);
+            bestMonthDetailLabel.setText(record + " (" + pctStr + ")");
+        }
+
+        // Longest Streak card
+        if (info.longestStreakCount > 0 && info.longestStreakType != null) {
+            String typeWord = info.longestStreakType.equals("W") ? "Win" : "Loss";
+            longestStreakLabel.setText(info.longestStreakType + info.longestStreakCount);
+            longestStreakDetailLabel.setText("Season-best " + typeWord.toLowerCase() + " streak");
+        }
+
+        // Home vs Away card
+        String homeStr = String.format("Home %.1f ppg", info.homeAvgPoints);
+        String awayStr = String.format("Away %.1f ppg", info.awayAvgPoints);
+
+        if (info.homeAvgPoints >= info.awayAvgPoints) {
+            homeAwayLabel.setText("Stronger at home");
+        } else {
+            homeAwayLabel.setText("Stronger on the road");
+        }
+        homeAwayDetailLabel.setText(homeStr + " / " + awayStr);
+    }
+
     private JPanel createStatCard(String label, JLabel valueLbl, JLabel subLbl) {
         JPanel card = new JPanel();
         card.setLayout(new BorderLayout());
@@ -580,7 +634,7 @@ public class FanPanel extends BasePanel {
         };
 
         teamTable = new JTable(teamTableModel);
-        teamTable.setFillsViewportHeight(true);
+        styleStatsTable(teamTable);
 
         JScrollPane scrollPane = createTableScrollPane(teamTable);
 
@@ -623,7 +677,7 @@ public class FanPanel extends BasePanel {
         };
 
         playerTable = new JTable(playerTableModel);
-        playerTable.setFillsViewportHeight(true);
+        styleStatsTable(playerTable);
 
         JScrollPane scrollPane = createTableScrollPane(playerTable);
 
@@ -641,37 +695,118 @@ public class FanPanel extends BasePanel {
         JLabel title = new JLabel("Team Performance Over Time");
         title.setFont(new Font("SansSerif", Font.BOLD, 16));
         title.setForeground(Color.WHITE);
+        // Left-align the title
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel desc = new JLabel("Monthly points and wins (charts can be added later)");
         desc.setFont(new Font("SansSerif", Font.PLAIN, 12));
         desc.setForeground(DASH_MUTED_TEXT);
+        // Left-align the subtitle
+        desc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel header = new JPanel();
-        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+        // Header container: left‑aligned title + subtitle
+        JPanel header = new JPanel(new BorderLayout());
+
         header.setOpaque(false);
         header.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
-        header.add(title);
-        header.add(desc);
 
-        String[] columns = {"Month", "Points", "Wins"};
+        JPanel headerText = new JPanel();
+        headerText.setLayout(new BoxLayout(headerText, BoxLayout.Y_AXIS));
+        headerText.setOpaque(false);
+        headerText.add(title);
+        headerText.add(desc);
+
+        // Pin the header text to the left within the tab
+        header.add(headerText, BorderLayout.WEST);
+
+
+        // Level 2 insight cards row
+        JPanel cardsRow = new JPanel();
+        cardsRow.setLayout(new GridLayout(1, 3, 12, 0));
+        cardsRow.setOpaque(false);
+        cardsRow.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
+
+        // Card 1: Best Month
+        bestMonthLabel = new JLabel("—");
+        bestMonthDetailLabel = new JLabel("Record —");
+        JPanel bestMonthCard = createInsightCard("Best Month", bestMonthLabel, bestMonthDetailLabel);
+        cardsRow.add(bestMonthCard);
+
+        // Card 2: Longest Streak
+        longestStreakLabel = new JLabel("—");
+        longestStreakDetailLabel = new JLabel("Season-best streak");
+        JPanel streakCard = createInsightCard("Longest Streak", longestStreakLabel, longestStreakDetailLabel);
+        cardsRow.add(streakCard);
+
+        // Card 3: Home vs Away
+        homeAwayLabel = new JLabel("—");
+        homeAwayDetailLabel = new JLabel("Home vs road scoring");
+        JPanel homeAwayCard = createInsightCard("Home vs Away", homeAwayLabel, homeAwayDetailLabel);
+        cardsRow.add(homeAwayCard);
+
+        // Performance table 
+        String[] columns = {
+            "Month",
+            "Avg Points",
+            "W-L",
+            "Avg Margin",
+            "High",
+            "Low",
+            "Opp Avg"
+        };
+
+        Object[][] data = new Object[0][columns.length];
 
         // Start with an empty model; real data is loaded from the database
-        performanceTableModel = new DefaultTableModel(columns, 0) {
+        performanceTableModel = new DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        performanceTable = new JTable(performanceTableModel);
-        performanceTable.setFillsViewportHeight(true);
+       performanceTable = new JTable(performanceTableModel);
+        styleStatsTable(performanceTable);   // reuse theme
+        performanceTable.setPreferredScrollableViewportSize(
+        new Dimension(performanceTable.getPreferredSize().width, 140));
 
         JScrollPane scrollPane = createTableScrollPane(performanceTable);
+        // Add a small top margin above the scroll pane
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
 
-        panel.add(header, BorderLayout.NORTH);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        // Stack header + cards + table vertically
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+
+        content.add(header);
+        content.add(cardsRow);
+        content.add(scrollPane);
+
+        panel.add(content, BorderLayout.NORTH);
+        panel.add(Box.createVerticalGlue(), BorderLayout.CENTER);
+
 
         return panel;
+    }
+
+    // Apply dark dashboard theme to any stats table
+    private void styleStatsTable(JTable table) {
+        table.setFillsViewportHeight(true);
+        table.setBackground(DASH_BACKGROUND);
+        table.setForeground(Color.WHITE);
+        table.setGridColor(DASH_MUTED_TEXT);
+        table.setSelectionBackground(new Color(30, 64, 175)); // dark blue highlight
+        table.setSelectionForeground(Color.WHITE);
+        table.setRowHeight(22);
+
+        // Header styling
+        JTableHeader header = table.getTableHeader();
+        if (header != null) {
+            header.setBackground(DASH_BACKGROUND);
+            header.setForeground(Color.WHITE);
+            header.setReorderingAllowed(false);
+        }
     }
 
 
@@ -706,5 +841,32 @@ public class FanPanel extends BasePanel {
         for (Object[] row : rows) {
             model.addRow(row);
         }
+    }
+
+    // Builds the Level 2 insight cards used on the Performance tab
+    private JPanel createInsightCard(String title, JLabel mainValue, JLabel detailLabel) {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(new Color(15, 23, 42)); // same dark card background
+        card.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        card.setOpaque(true);
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        titleLabel.setForeground(DASH_MUTED_TEXT);
+
+        mainValue.setFont(new Font("SansSerif", Font.BOLD, 16));
+        mainValue.setForeground(Color.WHITE);
+
+        detailLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        detailLabel.setForeground(DASH_POSITIVE_TEXT);
+
+        card.add(titleLabel);
+        card.add(Box.createVerticalStrut(4));
+        card.add(mainValue);
+        card.add(Box.createVerticalStrut(2));
+        card.add(detailLabel);
+
+        return card;
     }
 }

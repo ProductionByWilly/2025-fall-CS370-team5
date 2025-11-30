@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.table.TableRowSorter;
+
+import Database.AuthService;
 import Database.Database;
 import Database.User;
 import Database.Role;

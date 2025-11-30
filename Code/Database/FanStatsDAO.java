@@ -123,6 +123,112 @@ public class FanStatsDAO {
         public String streak;
     }
 
+    // Small DTO for advanced performance insights (used on Performance tab)
+    public static class PerformanceInsights {
+        public String bestMonthLabel;   // "Nov"
+        public int bestMonthWins;
+        public int bestMonthLosses;
+        public double bestMonthWinPct;  // 0.500 = 50%
+
+        public String longestStreakType; // "W" or "L"
+        public int longestStreakCount;
+
+        public double homeAvgPoints;
+        public double awayAvgPoints;
+}
+
+    // PERFORMANCE INSIGHTS 
+public PerformanceInsights fetchPerformanceInsights() throws SQLException {
+    PerformanceInsights info = new PerformanceInsights();
+
+    try (Connection conn = Database.getConnection()) {
+
+        // 1) Best month by win percentage
+        String bestMonthSql = """
+            SELECT month_label, wins, losses, win_pct
+            FROM (
+                SELECT 
+                  DATE_FORMAT(game_date, '%Y-%m') AS ym,
+                  DATE_FORMAT(game_date, '%b')    AS month_label,
+                  SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) AS wins,
+                  SUM(CASE WHEN result = 'L' THEN 1 ELSE 0 END) AS losses,
+                  SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) /
+                  NULLIF(COUNT(*), 0) AS win_pct
+                FROM games
+                GROUP BY ym, month_label
+            ) AS m
+            ORDER BY win_pct DESC, wins DESC
+            LIMIT 1
+        """;
+
+        try (PreparedStatement ps = conn.prepareStatement(bestMonthSql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                info.bestMonthLabel = rs.getString("month_label");
+                info.bestMonthWins  = rs.getInt("wins");
+                info.bestMonthLosses = rs.getInt("losses");
+                info.bestMonthWinPct = rs.getDouble("win_pct");
+            }
+        }
+
+        // Longest streak (W or L) over the season 
+            String streakSql = """
+                SELECT game_date, result
+                FROM games
+                ORDER BY game_date
+            """;
+
+            int curCount = 0;
+            String curType = null; // "W" or "L"
+            int bestCount = 0;
+            String bestType = null;
+
+            try (PreparedStatement ps = conn.prepareStatement(streakSql);
+                ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    String r = rs.getString("result"); // "W" or "L"
+                    if (r == null) continue;
+
+                    if (curType == null || !curType.equals(r)) {
+                        // reset streak
+                        curType = r;
+                        curCount = 1;
+                    } else {
+                        curCount++;
+                    }
+
+                    if (curCount > bestCount) {
+                        bestCount = curCount;
+                        bestType = curType;
+                    }
+                }
+            }
+            info.longestStreakType = (bestType == null) ? "-" : bestType;
+            info.longestStreakCount = bestCount;
+
+            // Home vs Away average points
+            String homeAwaySql = """
+                SELECT
+                AVG(CASE WHEN home_away = 'HOME' THEN team_score END) AS home_avg,
+                AVG(CASE WHEN home_away = 'AWAY' THEN team_score END) AS away_avg
+                FROM games
+            """;
+
+            try (PreparedStatement ps = conn.prepareStatement(homeAwaySql);
+                ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+                    info.homeAvgPoints = rs.getDouble("home_avg");
+                    info.awayAvgPoints = rs.getDouble("away_avg");
+                }
+            }
+        }
+
+        return info;
+    }
+
     //  TOP PLAYERS
     public Object[][] fetchTopPlayersRows(String season) throws SQLException {
         String sql = """
@@ -221,27 +327,63 @@ public double fetchAvgPointsPerGame() throws SQLException {
     //  PERFORMANCE BY MONTH
     public Object[][] fetchPerformanceRows() throws SQLException {
         String sql = """
-            SELECT 
-              DATE_FORMAT(game_date, '%b') AS month_label,
-              AVG(team_score) AS avg_points,
-              SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) AS wins
-            FROM games
-            GROUP BY DATE_FORMAT(game_date, '%Y-%m')
-            ORDER BY MIN(game_date)
+            SELECT month_label,
+                avg_points,
+                wins,
+                losses,
+                avg_margin,
+                high_pts,
+                low_pts,
+                opp_avg
+            FROM (
+                SELECT 
+                DATE_FORMAT(game_date, '%Y-%m') AS ym,
+                DATE_FORMAT(game_date, '%b')    AS month_label,
+                AVG(team_score)                 AS avg_points,
+                SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) AS wins,
+                SUM(CASE WHEN result = 'L' THEN 1 ELSE 0 END) AS losses,
+                AVG(team_score - opp_score)     AS avg_margin,
+                MAX(team_score)                 AS high_pts,
+                MIN(team_score)                 AS low_pts,
+                AVG(opp_score)                  AS opp_avg
+                FROM games
+                GROUP BY ym, month_label
+            ) AS m
+            ORDER BY ym
         """;
 
         List<Object[]> list = new ArrayList<>();
 
         try (Connection conn = Database.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 String month    = rs.getString("month_label");
-                int avgPoints   = rs.getInt("avg_points");
-                int wins        = rs.getInt("wins");
 
-                list.add(new Object[]{month, avgPoints, wins});
+                double avgPts   = rs.getDouble("avg_points");
+                int wins        = rs.getInt("wins");
+                int losses      = rs.getInt("losses");
+                double margin   = rs.getDouble("avg_margin");
+                int high        = rs.getInt("high_pts");
+                int low         = rs.getInt("low_pts");
+                double oppAvg   = rs.getDouble("opp_avg");
+
+                // Format for display
+                String avgPtsStr   = String.format("%.1f", avgPts);
+                String wlStr       = wins + "-" + losses;              // 5) W-L record
+                String marginStr   = String.format("%.1f", margin);    // 1) avg margin
+                String oppAvgStr   = String.format("%.1f", oppAvg);    // 4) opp avg
+
+                list.add(new Object[]{
+                        month,        // Month
+                        avgPtsStr,    // 2) Avg points
+                        wlStr,        // 5) W-L record text
+                        marginStr,    // 1) Avg point differential
+                        high,         // 2) Highest scoring game
+                        low,          // 3) Lowest scoring game
+                        oppAvgStr     // 4) Avg opponent points
+                });
             }
         }
 

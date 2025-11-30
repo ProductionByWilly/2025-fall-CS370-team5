@@ -1,3 +1,4 @@
+import Database.AuthService;
 import Database.Role;
 import Database.User;
 

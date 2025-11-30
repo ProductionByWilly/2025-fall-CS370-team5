@@ -1,6 +1,5 @@
-import Database.Role;
-import Database.User;
-import Database.UserDAO;
+package Database;
+
 import org.mindrot.jbcrypt.BCrypt;
 import java.util.Optional;
 
