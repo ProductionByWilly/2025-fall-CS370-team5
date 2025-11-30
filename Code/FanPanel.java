@@ -190,7 +190,6 @@ public class FanPanel extends BasePanel {
         add(loginBox);
         add(Box.createRigidArea(new Dimension(0, 20)));
 
-
         // DASHBOARD BOX (State 2) 
         // Initially hidden, shown after login
         dashboardBox = new JPanel();
