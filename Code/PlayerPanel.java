@@ -1,6 +1,7 @@
-import Database.AuthService;
 import Database.Role;
 import Database.User;
+import Database.AuthService;
+import Database.PlayerStatsDAO;
 
 import java.awt.*;
 import javax.swing.*;
@@ -20,15 +21,22 @@ public class PlayerPanel extends BasePanel {
 
     private JPanel loginBox;
     private JPanel dashboardBox;
+
+    // top bar welcome label
     private JLabel dashWelcomeLabel;
 
-    // (reuse your existing AuthService)
+    // auth + stats DAO
     private final AuthService auth = new AuthService();
+    private final PlayerStatsDAO playerStatsDAO = new PlayerStatsDAO();
 
     // ---- Dashboard widgets ----
     private static final Color DASH_BACKGROUND = new Color(15, 23, 42);      // dark navy
     private static final Color DASH_MUTED_TEXT = new Color(148, 163, 184);   // slate 400
     private static final Color DASH_PURPLE     = new Color(124, 58, 237);    // header gradient-ish
+
+    // header card labels (name + pos/jersey)
+    private JLabel headerNameLabel;
+    private JLabel headerPosLabel;
 
     // quick stat labels
     private JLabel ppgValueLabel;
@@ -185,10 +193,8 @@ public class PlayerPanel extends BasePanel {
                 return;
             }
 
-            dashWelcomeLabel.setText("Welcome, " + u.email + " (Player)");
-
-            // In the future: load player stats from DB here
-            loadDashboardSampleData();
+            // Load stats for the player linked to this user account
+            loadDashboardData(u);
 
             loginBox.setVisible(false);
             dashboardBox.setVisible(true);
@@ -226,20 +232,6 @@ public class PlayerPanel extends BasePanel {
 
         dashboardBox.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        dashWelcomeLabel = new JLabel("Welcome, Player!");
-        dashWelcomeLabel.setForeground(Color.WHITE);
-        dashWelcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        dashWelcomeLabel.setFont(dashWelcomeLabel.getFont().deriveFont(Font.BOLD, 20f));
-
-        JLabel subtitle = new JLabel("View performance trends, skills, goals, and achievements");
-        subtitle.setForeground(Color.WHITE);
-        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        dashboardBox.add(dashWelcomeLabel);
-        dashboardBox.add(Box.createRigidArea(new Dimension(0, 5)));
-        dashboardBox.add(subtitle);
-        dashboardBox.add(Box.createRigidArea(new Dimension(0, 20)));
-
         JPanel inner = createDashboardPanel();
         inner.setAlignmentX(Component.CENTER_ALIGNMENT);
         inner.setPreferredSize(new Dimension(1100, 650));
@@ -249,14 +241,55 @@ public class PlayerPanel extends BasePanel {
     }
 
     private JPanel createDashboardPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(DASH_BACKGROUND);
-        panel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.setBackground(DASH_BACKGROUND);
+        outer.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        panel.add(createHeaderCard(), BorderLayout.NORTH);
-        panel.add(createMainContent(), BorderLayout.CENTER);
+        // center stack = header card + tabs
+        JPanel centerStack = new JPanel(new BorderLayout());
+        centerStack.setOpaque(false);
+        centerStack.add(createHeaderCard(), BorderLayout.NORTH);
+        centerStack.add(createMainContent(), BorderLayout.CENTER);
 
-        return panel;
+        outer.add(createTopBar(), BorderLayout.NORTH);
+        outer.add(centerStack, BorderLayout.CENTER);
+
+        return outer;
+    }
+
+    // Top bar with centered welcome + logout button
+    private JPanel createTopBar() {
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setOpaque(false);
+        bar.setBorder(BorderFactory.createEmptyBorder(4, 0, 8, 0));
+
+        dashWelcomeLabel = new JLabel("Welcome, Player!");
+        dashWelcomeLabel.setForeground(Color.WHITE);
+        dashWelcomeLabel.setFont(dashWelcomeLabel.getFont().deriveFont(Font.BOLD, 18f));
+
+        JLabel subtitle = new JLabel("View performance trends, skills, goals, and achievements");
+        subtitle.setForeground(DASH_MUTED_TEXT);
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+        dashWelcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        center.add(dashWelcomeLabel);
+        center.add(subtitle);
+
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.addActionListener(e -> handleLogout());
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.setOpaque(false);
+        right.add(logoutButton);
+
+        bar.add(center, BorderLayout.CENTER);
+        bar.add(right, BorderLayout.EAST);
+
+        return bar;
     }
 
     // Top big player card
@@ -269,43 +302,42 @@ public class PlayerPanel extends BasePanel {
         JPanel avatarWrapper = new JPanel(new BorderLayout());
         avatarWrapper.setOpaque(false);
 
-        // simple placeholder image (could swap for real player headshot)
         JLabel avatar = new JLabel();
         avatar.setPreferredSize(new Dimension(120, 120));
         avatar.setOpaque(true);
         avatar.setBackground(new Color(30, 64, 175)); // purple-ish blue
         avatar.setHorizontalAlignment(SwingConstants.CENTER);
-        avatar.setText("KD");
+        avatar.setText("DS");
         avatar.setForeground(Color.WHITE);
         avatar.setFont(new Font("SansSerif", Font.BOLD, 32));
 
         avatarWrapper.add(avatar, BorderLayout.CENTER);
 
-        // Center: name + position
+        // Center: name + position/jersey
         JPanel center = new JPanel();
         center.setOpaque(false);
         center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
-        JLabel nameLabel = new JLabel("Kevin Durant");
-        nameLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
-        nameLabel.setForeground(Color.WHITE);
+        headerNameLabel = new JLabel("Player Name");
+        headerNameLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
+        headerNameLabel.setForeground(Color.WHITE);
 
-        JLabel posLabel = new JLabel("Small Forward  •  #35");
-        posLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        posLabel.setForeground(new Color(224, 231, 255));
+        headerPosLabel = new JLabel("Guard  •  #--");
+        headerPosLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        headerPosLabel.setForeground(new Color(224, 231, 255));
 
-        center.add(nameLabel);
+        center.add(headerNameLabel);
         center.add(Box.createRigidArea(new Dimension(0, 8)));
-        center.add(posLabel);
+        center.add(headerPosLabel);
 
         // Right: stats (PPG, RPG, APG, Rating)
         JPanel statsRow = new JPanel(new GridLayout(1, 4, 16, 0));
         statsRow.setOpaque(false);
 
-        ppgValueLabel    = new JLabel("28.5", SwingConstants.CENTER);
-        rpgValueLabel    = new JLabel("7.2",  SwingConstants.CENTER);
-        apgValueLabel    = new JLabel("5.8",  SwingConstants.CENTER);
-        ratingValueLabel = new JLabel("95",   SwingConstants.CENTER);
+        ppgValueLabel    = new JLabel("--", SwingConstants.CENTER);
+        rpgValueLabel    = new JLabel("--", SwingConstants.CENTER);
+        apgValueLabel    = new JLabel("--", SwingConstants.CENTER);
+        ratingValueLabel = new JLabel("--", SwingConstants.CENTER);
 
         statsRow.add(createHeaderStatCard("PPG", ppgValueLabel));
         statsRow.add(createHeaderStatCard("RPG", rpgValueLabel));
@@ -363,14 +395,12 @@ public class PlayerPanel extends BasePanel {
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
 
-        // Title
         JLabel title = new JLabel("Recent Performance");
         title.setFont(new Font("SansSerif", Font.BOLD, 16));
         title.setForeground(Color.WHITE);
 
         panel.add(title, BorderLayout.NORTH);
 
-        // Table of last games (simpler than fancy charts)
         String[] columns = {"Game", "Opponent", "Result", "PTS", "REB", "AST"};
         performanceTableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -413,7 +443,6 @@ public class PlayerPanel extends BasePanel {
         panel.add(subtitle);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        // skills with progress bars (0–100)
         panel.add(createSkillRow("Shooting",     95));
         panel.add(createSkillRow("Defense",      88));
         panel.add(createSkillRow("Ball Handling",90));
@@ -575,29 +604,72 @@ public class PlayerPanel extends BasePanel {
         return card;
     }
 
-    // For now this just fills in demo data.
-    // Later you can replace with DB calls.
-    private void loadDashboardSampleData() {
-        // Performance games
-        Object[][] rows = {
-                {"Game 1", "vs Lakers",   "W", 32, 8, 7},
-                {"Game 2", "vs Warriors", "W", 28, 7, 5},
-                {"Game 3", "vs Clippers", "L", 35, 9, 6},
-                {"Game 4", "vs Suns",     "W", 27, 6, 4},
-                {"Game 5", "vs Kings",    "W", 30, 9, 8},
-        };
+    // ---------- DB → UI glue ----------
 
+    private void loadDashboardData(User user) {
+        try {
+            // 1. Which player does this user control?
+            Integer playerId = playerStatsDAO.findPlayerIdForUser(user.id);
+            if (playerId == null) {
+                dashWelcomeLabel.setText("Welcome, " + user.email + " (Player)");
+                clearPerformanceTable();
+                showError("No player is linked to this user in PLAYER_ACCOUNTS.");
+                return;
+            }
+
+            // 2. Season summary (PPG/RPG/APG) + name/jersey
+            PlayerStatsDAO.PlayerSummary summary =
+                    playerStatsDAO.fetchPlayerSummary(playerId);
+
+            String displayName = (summary != null &&
+                    summary.playerName != null &&
+                    !summary.playerName.isBlank())
+                    ? summary.playerName
+                    : user.email;
+
+            dashWelcomeLabel.setText("Welcome, " + displayName + " (Player)");
+            headerNameLabel.setText(displayName);
+
+            if (summary != null) {
+                String jerseyText = (summary.jersey != null && !summary.jersey.isBlank())
+                        ? "#" + summary.jersey
+                        : "#--";
+                // Position not in DB yet – just keep Guard for now
+                headerPosLabel.setText("Guard  •  " + jerseyText);
+
+                ppgValueLabel.setText(String.format("%.1f", summary.ppg));
+                rpgValueLabel.setText(String.format("%.1f", summary.rpg));
+                apgValueLabel.setText(String.format("%.1f", summary.apg));
+
+                // Simple made-up rating formula – adjust or replace later
+                double rating = summary.ppg * 1.0 + summary.rpg * 0.7 + summary.apg * 0.7;
+                ratingValueLabel.setText(String.format("%.0f", rating));
+            } else {
+                headerPosLabel.setText("Guard  •  #--");
+                ppgValueLabel.setText("--");
+                rpgValueLabel.setText("--");
+                apgValueLabel.setText("--");
+                ratingValueLabel.setText("--");
+            }
+
+            // 3. Per-game rows for the performance table
+            Object[][] rows = playerStatsDAO.fetchGameRowsForPlayer(playerId);
+            clearPerformanceTable();
+            if (rows != null) {
+                for (Object[] r : rows) {
+                    performanceTableModel.addRow(r);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Failed to load player stats from the database.");
+        }
+    }
+
+    private void clearPerformanceTable() {
         if (performanceTableModel != null) {
             performanceTableModel.setRowCount(0);
-            for (Object[] r : rows) {
-                performanceTableModel.addRow(r);
-            }
         }
-
-        // quick header stats – could be computed from DB later
-        ppgValueLabel.setText("28.5");
-        rpgValueLabel.setText("7.2");
-        apgValueLabel.setText("5.8");
-        ratingValueLabel.setText("95");
     }
 }
