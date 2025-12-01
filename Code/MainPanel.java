@@ -94,7 +94,7 @@ public class MainPanel extends BasePanel {
             image.setHorizontalTextPosition(SwingConstants.CENTER);
             image.setVerticalTextPosition(SwingConstants.CENTER);
         } else {
-            System.err.println("⚠️  banner.png not found on classpath (/Resources/images/banner.png)");
+            System.err.println("banner.png not found on classpath (/Resources/images/banner.png)");
             image.setText("CSU Sports Metrics");
             image.setHorizontalAlignment(SwingConstants.CENTER);
             image.setForeground(Color.WHITE);
@@ -286,7 +286,7 @@ public class MainPanel extends BasePanel {
         // ----- Sign Up button -----
         JButton SignUpButton = new JButton("Sign Up");
         SignUpButton.setBackground(AppColors.lightGray);
-        SignUpButton.setForeground(Color.WHITE);
+        SignUpButton.setForeground(Color.BLACK);
         // Keep the button a normal control height so the section has room for the form fields
         SignUpButton.setPreferredSize(new Dimension(260, 30));
         SignUpButton.setMaximumSize(new Dimension(260, 30));
