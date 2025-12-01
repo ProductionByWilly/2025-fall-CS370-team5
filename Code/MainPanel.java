@@ -94,7 +94,9 @@ public class MainPanel extends BasePanel {
             image.setHorizontalTextPosition(SwingConstants.CENTER);
             image.setVerticalTextPosition(SwingConstants.CENTER);
         } else {
+
             System.err.println("banner.png not found on classpath (/Resources/images/banner.png)");
+
             image.setText("CSU Sports Metrics");
             image.setHorizontalAlignment(SwingConstants.CENTER);
             image.setForeground(Color.WHITE);
