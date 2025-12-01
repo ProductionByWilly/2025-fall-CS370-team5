@@ -1,8 +1,7 @@
 package Database;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class PlayerStatsDAO {
 
@@ -160,5 +159,170 @@ public class PlayerStatsDAO {
         }
 
         return rows.toArray(new Object[0][]);
+    }
+
+    // ---------------------------------------------------------
+    // ACHIEVEMENTS SYSTEM
+    // ---------------------------------------------------------
+
+    public static class PlayerAchievement {
+        public final String title;
+        public final String date;
+        public final String tier;
+
+        public PlayerAchievement(String title, String date, String tier) {
+            this.title = title;
+            this.date  = date;
+            this.tier  = tier;
+        }
+    }
+
+    /**
+     * Compute achievements:
+     *  - Points (total season points)
+     *  - Rebounds (total season rebounds)
+     *  - Assists (total season assists)
+     *  - Games Played (total games)
+     *
+     * Tier thresholds based on team percentile:
+     *   Bronze  = top 30%  of team or better
+     *   Silver  = top 50%  of team or better
+     *   Gold    = top 75%  of team or better
+     *   Diamond = top 90%  of team or better
+     *   Not achieved = below top 30%
+     */
+    public List<PlayerAchievement> fetchAchievementsForPlayer(int playerId) throws SQLException {
+
+        List<PlayerAchievement> out = new ArrayList<>();
+
+        try (Connection conn = getConnection()) {
+
+            // ---------- 1. Get ALL players' season totals ----------
+            String teamSql =
+                    "SELECT player_id, " +
+                            "SUM(PTS) AS totalPts, " +
+                            "SUM(REB) AS totalReb, " +
+                            "SUM(AST) AS totalAst, " +
+                            "COUNT(*) AS gamesPlayed " +
+                            "FROM " + STATS_TABLE + " GROUP BY player_id";
+
+            Map<Integer, double[]> totals = new HashMap<>(); // pid -> [pts, reb, ast, games]
+
+            try (PreparedStatement ps = conn.prepareStatement(teamSql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    totals.put(rs.getInt("player_id"), new double[]{
+                            rs.getDouble("totalPts"),
+                            rs.getDouble("totalReb"),
+                            rs.getDouble("totalAst"),
+                            rs.getDouble("gamesPlayed")
+                    });
+                }
+            }
+
+            if (!totals.containsKey(playerId)) {
+                return out;
+            }
+
+            double[] my = totals.get(playerId);
+            double myPts   = my[0];
+            double myReb   = my[1];
+            double myAst   = my[2];
+            double myGames = my[3];
+
+            // Build arrays to rank the player vs team
+            List<Double> ptsList   = new ArrayList<>();
+            List<Double> rebList   = new ArrayList<>();
+            List<Double> astList   = new ArrayList<>();
+            List<Double> gamesList = new ArrayList<>();
+
+            for (double[] t : totals.values()) {
+                ptsList.add(t[0]);
+                rebList.add(t[1]);
+                astList.add(t[2]);
+                gamesList.add(t[3]);
+            }
+
+            ptsList.sort(Collections.reverseOrder());
+            rebList.sort(Collections.reverseOrder());
+            astList.sort(Collections.reverseOrder());
+            gamesList.sort(Collections.reverseOrder());
+
+            // Compute tier from percentile
+            String ptsTier   = tierFromRank(myPts,   ptsList);
+            String rebTier   = tierFromRank(myReb,   rebList);
+            String astTier   = tierFromRank(myAst,   astList);
+            String gamesTier = tierFromRank(myGames, gamesList);
+
+            // ----------- 2. Get the game date of best performances -----------
+
+            String datePtsSql =
+                    "SELECT `Date` FROM " + STATS_TABLE +
+                            " WHERE player_id = ? ORDER BY PTS DESC LIMIT 1";
+
+            String dateRebSql =
+                    "SELECT `Date` FROM " + STATS_TABLE +
+                            " WHERE player_id = ? ORDER BY REB DESC LIMIT 1";
+
+            String dateAstSql =
+                    "SELECT `Date` FROM " + STATS_TABLE +
+                            " WHERE player_id = ? ORDER BY AST DESC LIMIT 1";
+
+            // For games played, just use first game of the season
+            String dateGamesSql =
+                    "SELECT `Date` FROM " + STATS_TABLE +
+                            " WHERE player_id = ? ORDER BY `Date` ASC LIMIT 1";
+
+            String datePts  = fetchSingleDate(conn, datePtsSql,  playerId);
+            String dateReb  = fetchSingleDate(conn, dateRebSql,  playerId);
+            String dateAst  = fetchSingleDate(conn, dateAstSql,  playerId);
+            String dateGms  = fetchSingleDate(conn, dateGamesSql, playerId);
+
+            // ----------- 3. Push to output -----------
+
+            out.add(new PlayerAchievement("Scoring Achievement",      datePts, ptsTier));
+            out.add(new PlayerAchievement("Rebounding Achievement",   dateReb, rebTier));
+            out.add(new PlayerAchievement("Assist Achievement",       dateAst, astTier));
+            out.add(new PlayerAchievement("Games Played Achievement", dateGms, gamesTier));
+        }
+
+        return out;
+    }
+
+    private String fetchSingleDate(Connection conn, String sql, int playerId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, playerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString(1);
+                }
+            }
+        }
+        return "--";
+    }
+
+    /**
+     * Convert a rank into a tier based on where the player's total
+     * sits relative to the rest of the team.
+     *
+     * sortedDesc is a list of totals sorted in descending order.
+     */
+    private String tierFromRank(double value, List<Double> sortedDesc) {
+        if (sortedDesc.isEmpty()) return "Not achieved";
+
+        int idx = sortedDesc.indexOf(value);
+        if (idx < 0) return "Not achieved";
+
+        int n = sortedDesc.size();
+
+        // fractionTop = how far into the "top of the team" the player is
+        // 1.0 = best in team, 0.0 = last in team
+        double fractionTop = 1.0 - ((double) idx / n);
+
+        if (fractionTop >= 0.90) return "Diamond"; // top 90%
+        if (fractionTop >= 0.75) return "Gold";    // top 75%
+        if (fractionTop >= 0.50) return "Silver";  // top 50%
+        if (fractionTop >= 0.30) return "Bronze";  // top 30%
+        return "Not achieved";
     }
 }

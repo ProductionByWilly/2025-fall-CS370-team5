@@ -4,6 +4,7 @@ import Database.AuthService;
 import Database.PlayerStatsDAO;
 
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -58,6 +59,8 @@ public class PlayerPanel extends BasePanel {
     private JProgressBar assistGoalBar;
     private JProgressBar threePointGoalBar;
 
+    // achievements list panel (filled after DB load)
+    private JPanel achievementsListPanel;
 
     // performance table
     private JTable performanceTable;
@@ -580,16 +583,18 @@ public class PlayerPanel extends BasePanel {
         panel.add(subtitle);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        panel.add(createAchievementCard("Player of the Week", "Nov 1, 2024", true));
-        panel.add(createAchievementCard("30+ Point Streak", "Oct 28, 2024", true));
-        panel.add(createAchievementCard("Team MVP", "Oct 15, 2024", true));
+        // dynamic list container, filled after DB load
+        achievementsListPanel = new JPanel();
+        achievementsListPanel.setOpaque(false);
+        achievementsListPanel.setLayout(new BoxLayout(achievementsListPanel, BoxLayout.Y_AXIS));
 
+        panel.add(achievementsListPanel);
         panel.add(Box.createVerticalGlue());
 
         return panel;
     }
 
-    private JPanel createAchievementCard(String title, String date, boolean isNew) {
+    private JPanel createAchievementCard(String title, String date, String tier) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         card.setBackground(new Color(15, 23, 42));
@@ -612,13 +617,23 @@ public class PlayerPanel extends BasePanel {
 
         card.add(left, BorderLayout.CENTER);
 
-        if (isNew) {
-            JLabel badge = new JLabel("New");
+        // Badge for tier (skip if "Not achieved")
+        if (tier != null && !tier.equalsIgnoreCase("Not achieved")) {
+            JLabel badge = new JLabel(tier);
             badge.setOpaque(true);
-            badge.setBackground(new Color(147, 51, 234));
             badge.setForeground(Color.WHITE);
             badge.setFont(new Font("SansSerif", Font.BOLD, 11));
             badge.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
+
+            // Simple color mapping per tier
+            switch (tier) {
+                case "Diamond" -> badge.setBackground(new Color(56, 189, 248));   // cyan-ish
+                case "Gold"    -> badge.setBackground(new Color(234, 179, 8));    // gold
+                case "Silver"  -> badge.setBackground(new Color(148, 163, 184));  // gray
+                case "Bronze"  -> badge.setBackground(new Color(180, 83, 9));     // bronze
+                default        -> badge.setBackground(new Color(147, 51, 234));   // fallback purple
+            }
+
             card.add(badge, BorderLayout.EAST);
         }
 
@@ -695,7 +710,6 @@ public class PlayerPanel extends BasePanel {
                 apgValueLabel.setText(String.format("%.1f", summary.apg));
                 computeTrainingGoals(summary.ppg, summary.rpg, summary.apg);
 
-
                 // Simple made-up rating formula – adjust or replace later
                 double rating = summary.ppg * 1.0 + summary.rpg * 0.7 + summary.apg * 0.7;
                 ratingValueLabel.setText(String.format("%.0f", rating));
@@ -717,10 +731,48 @@ public class PlayerPanel extends BasePanel {
             }
             computeAndApplySkillRatings();
 
+            // 4. Achievements
+            loadAchievements(playerId);
+
         } catch (Exception e) {
             e.printStackTrace();
             showError("Failed to load player stats from the database.");
         }
+    }
+
+    private void loadAchievements(int playerId) {
+        if (achievementsListPanel == null) return;
+
+        achievementsListPanel.removeAll();
+
+        try {
+            List<PlayerStatsDAO.PlayerAchievement> list =
+                    playerStatsDAO.fetchAchievementsForPlayer(playerId);
+
+            if (list == null || list.isEmpty()) {
+                JLabel none = new JLabel("No achievements yet – keep playing!");
+                none.setForeground(DASH_MUTED_TEXT);
+                none.setFont(new Font("SansSerif", Font.ITALIC, 12));
+                none.setAlignmentX(Component.LEFT_ALIGNMENT);
+                achievementsListPanel.add(none);
+            } else {
+                for (PlayerStatsDAO.PlayerAchievement a : list) {
+                    JPanel card = createAchievementCard(a.title, a.date, a.tier);
+                    card.setAlignmentX(Component.LEFT_ALIGNMENT);
+                    achievementsListPanel.add(card);
+                    achievementsListPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JLabel err = new JLabel("Could not load achievements.");
+            err.setForeground(Color.RED);
+            err.setAlignmentX(Component.LEFT_ALIGNMENT);
+            achievementsListPanel.add(err);
+        }
+
+        achievementsListPanel.revalidate();
+        achievementsListPanel.repaint();
     }
 
     private void computeAndApplySkillRatings() {
@@ -737,14 +789,12 @@ public class PlayerPanel extends BasePanel {
         }
 
         double sumPts = 0, sumReb = 0, sumAst = 0;
-        double sumBlk = 0, sumStl = 0, sumTo = 0;
 
         // Loop through all table rows
         for (int i = 0; i < rowCount; i++) {
             sumPts += toDouble(performanceTableModel.getValueAt(i, 3));  // PTS
             sumReb += toDouble(performanceTableModel.getValueAt(i, 4));  // REB
             sumAst += toDouble(performanceTableModel.getValueAt(i, 5));  // AST
-            // If you add more columns later, update them here
         }
 
         double g = rowCount;
@@ -791,11 +841,9 @@ public class PlayerPanel extends BasePanel {
         bar.setString(val + "/100");
     }
 
-
     private void clearPerformanceTable() {
         if (performanceTableModel != null) {
             performanceTableModel.setRowCount(0);
         }
     }
-
 }
