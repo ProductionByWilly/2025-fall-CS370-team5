@@ -44,6 +44,21 @@ public class PlayerPanel extends BasePanel {
     private JLabel apgValueLabel;
     private JLabel ratingValueLabel;
 
+    // skill bars
+    private JProgressBar shootingBar;
+    private JProgressBar defenseBar;
+    private JProgressBar handlingBar;
+    private JProgressBar passingBar;
+    private JProgressBar reboundingBar;
+    private JProgressBar speedBar;
+
+    // training goals bars
+    private JProgressBar scoringGoalBar;
+    private JProgressBar reboundingGoalBar;
+    private JProgressBar assistGoalBar;
+    private JProgressBar threePointGoalBar;
+
+
     // performance table
     private JTable performanceTable;
     private DefaultTableModel performanceTableModel;
@@ -322,7 +337,7 @@ public class PlayerPanel extends BasePanel {
         headerNameLabel.setFont(new Font("SansSerif", Font.BOLD, 26));
         headerNameLabel.setForeground(Color.WHITE);
 
-        headerPosLabel = new JLabel("Guard  •  #--");
+        headerPosLabel = new JLabel("  •  #--");
         headerPosLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
         headerPosLabel.setForeground(new Color(224, 231, 255));
 
@@ -443,12 +458,12 @@ public class PlayerPanel extends BasePanel {
         panel.add(subtitle);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        panel.add(createSkillRow("Shooting",     95));
-        panel.add(createSkillRow("Defense",      88));
+        panel.add(createSkillRow("Shooting",     90));
+        panel.add(createSkillRow("Defense",      90));
         panel.add(createSkillRow("Ball Handling",90));
-        panel.add(createSkillRow("Passing",      85));
-        panel.add(createSkillRow("Rebounding",   82));
-        panel.add(createSkillRow("Speed",        87));
+        panel.add(createSkillRow("Passing",      90));
+        panel.add(createSkillRow("Rebounding",   90));
+        panel.add(createSkillRow("Speed",        90));
 
         panel.add(Box.createVerticalGlue());
 
@@ -468,11 +483,21 @@ public class PlayerPanel extends BasePanel {
         bar.setStringPainted(true);
         bar.setString(value + "/100");
 
+        switch (label) {
+            case "Shooting"      -> shootingBar   = bar;
+            case "Defense"       -> defenseBar    = bar;
+            case "Ball Handling" -> handlingBar   = bar;
+            case "Passing"       -> passingBar    = bar;
+            case "Rebounding"    -> reboundingBar = bar;
+            case "Speed"         -> speedBar      = bar;
+        }
+
         row.add(lbl, BorderLayout.WEST);
         row.add(bar, BorderLayout.CENTER);
 
         return row;
     }
+
 
     // ---------- Training Goals Tab ----------
     private JPanel createTrainingGoalsTab() {
@@ -496,46 +521,42 @@ public class PlayerPanel extends BasePanel {
         panel.add(subtitle);
         panel.add(Box.createRigidArea(new Dimension(0, 16)));
 
-        panel.add(createGoalCard("Free Throw Accuracy", "Current: 88% • Target: 90%", 97));
-        panel.add(createGoalCard("3-Point Percentage", "Current: 41% • Target: 43%", 95));
-        panel.add(createGoalCard("Vertical Jump", "Current: 34\" • Target: 36\"", 94));
-        panel.add(createGoalCard("Sprint Speed", "Current: 92% • Target: 95%", 96));
+        scoringGoalBar      = createGoalCard(panel, "Scoring Improvement");
+        reboundingGoalBar   = createGoalCard(panel, "Rebounding Efficiency");
+        assistGoalBar       = createGoalCard(panel, "Playmaking Growth");
+        threePointGoalBar   = createGoalCard(panel, "3-Point Accuracy");
 
         panel.add(Box.createVerticalGlue());
-
         return panel;
     }
 
-    private JPanel createGoalCard(String title, String subtitle, int progressPercent) {
+    private JProgressBar createGoalCard(JPanel parent, String title) {
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         card.setBackground(new Color(15, 23, 42));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel titleLbl = new JLabel(title);
         titleLbl.setForeground(Color.WHITE);
         titleLbl.setFont(new Font("SansSerif", Font.BOLD, 14));
 
-        JLabel subLbl = new JLabel(subtitle);
-        subLbl.setForeground(DASH_MUTED_TEXT);
-        subLbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
-
         JProgressBar bar = new JProgressBar(0, 100);
-        bar.setValue(progressPercent);
+        bar.setValue(0);
         bar.setStringPainted(true);
-        bar.setString(progressPercent + "%");
+        bar.setString("0%");
 
         card.add(titleLbl);
-        card.add(Box.createRigidArea(new Dimension(0, 4)));
-        card.add(subLbl);
         card.add(Box.createRigidArea(new Dimension(0, 8)));
         card.add(bar);
 
-        card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        parent.add(card);
+        parent.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        return card;
+        return bar;
     }
+
 
     // ---------- Achievements Tab ----------
     private JPanel createAchievementsTab() {
@@ -604,6 +625,38 @@ public class PlayerPanel extends BasePanel {
         return card;
     }
 
+    private void computeTrainingGoals(double ppg, double rpg, double apg) {
+
+        // --- Scoring Goal: +10% improvement ---
+        double scoringTarget = ppg * 1.10;
+        scoringGoalBar.setValue(clampTo100(ppg / scoringTarget * 100));
+        scoringGoalBar.setString(String.format("Current: %.1f  •  Target: %.1f", ppg, scoringTarget));
+
+        // --- Rebounding Goal: +15% improvement ---
+        double rebTarget = rpg * 1.15;
+        reboundingGoalBar.setValue(clampTo100(rpg / rebTarget * 100));
+        reboundingGoalBar.setString(String.format("Current: %.1f  •  Target: %.1f", rpg, rebTarget));
+
+        // --- Assist Goal: +20% improvement ---
+        double astTarget = apg * 1.20;
+        assistGoalBar.setValue(clampTo100(apg / astTarget * 100));
+        assistGoalBar.setString(String.format("Current: %.1f  •  Target: %.1f", apg, astTarget));
+
+        // --- 3PT% Goal: Estimate based on scoring style ---
+        double estimated3pt = Math.min(45, Math.max(20, (ppg * 2) + (apg * 1.5))); // 20–45%
+        double target3pt = estimated3pt + 4; // +4% improvement
+        threePointGoalBar.setValue(clampTo100(estimated3pt / target3pt * 100));
+        threePointGoalBar.setString(String.format("Current: %.0f%%  •  Target: %.0f%%",
+                estimated3pt, target3pt));
+    }
+
+    private int clampTo100(double v) {
+        if (v < 0) return 0;
+        if (v > 100) return 100;
+        return (int)Math.round(v);
+    }
+
+
     // ---------- DB → UI glue ----------
 
     private void loadDashboardData(User user) {
@@ -634,18 +687,20 @@ public class PlayerPanel extends BasePanel {
                 String jerseyText = (summary.jersey != null && !summary.jersey.isBlank())
                         ? "#" + summary.jersey
                         : "#--";
-                // Position not in DB yet – just keep Guard for now
-                headerPosLabel.setText("Guard  •  " + jerseyText);
+                // Position not in DB yet
+                headerPosLabel.setText("  •  " + jerseyText);
 
                 ppgValueLabel.setText(String.format("%.1f", summary.ppg));
                 rpgValueLabel.setText(String.format("%.1f", summary.rpg));
                 apgValueLabel.setText(String.format("%.1f", summary.apg));
+                computeTrainingGoals(summary.ppg, summary.rpg, summary.apg);
+
 
                 // Simple made-up rating formula – adjust or replace later
                 double rating = summary.ppg * 1.0 + summary.rpg * 0.7 + summary.apg * 0.7;
                 ratingValueLabel.setText(String.format("%.0f", rating));
             } else {
-                headerPosLabel.setText("Guard  •  #--");
+                headerPosLabel.setText("  •  #--");
                 ppgValueLabel.setText("--");
                 rpgValueLabel.setText("--");
                 apgValueLabel.setText("--");
@@ -660,6 +715,7 @@ public class PlayerPanel extends BasePanel {
                     performanceTableModel.addRow(r);
                 }
             }
+            computeAndApplySkillRatings();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -667,9 +723,79 @@ public class PlayerPanel extends BasePanel {
         }
     }
 
+    private void computeAndApplySkillRatings() {
+
+        int rowCount = performanceTableModel.getRowCount();
+        if (rowCount == 0) {
+            setSkillBar(shootingBar, 0);
+            setSkillBar(defenseBar, 0);
+            setSkillBar(handlingBar, 0);
+            setSkillBar(passingBar, 0);
+            setSkillBar(reboundingBar, 0);
+            setSkillBar(speedBar, 0);
+            return;
+        }
+
+        double sumPts = 0, sumReb = 0, sumAst = 0;
+        double sumBlk = 0, sumStl = 0, sumTo = 0;
+
+        // Loop through all table rows
+        for (int i = 0; i < rowCount; i++) {
+            sumPts += toDouble(performanceTableModel.getValueAt(i, 3));  // PTS
+            sumReb += toDouble(performanceTableModel.getValueAt(i, 4));  // REB
+            sumAst += toDouble(performanceTableModel.getValueAt(i, 5));  // AST
+            // If you add more columns later, update them here
+        }
+
+        double g = rowCount;
+
+        double ppg = sumPts / g;
+        double rpg = sumReb / g;
+        double apg = sumAst / g;
+
+        // ---- Simple rating formulas (0–100 range) ----
+        double shooting   = clamp(ppg * 7);     // scorer = higher shooting
+        double defense    = clamp(rpg * 4);     // rebounds = defensive activity
+        double handling   = clamp(apg * 10);    // assists = good ball handling
+        double passing    = clamp(apg * 12);    // stronger weight
+        double rebounding = clamp(rpg * 10);    // bigs get high rebound rating
+        double speed      = clamp((ppg + apg) * 3);  // activity estimate
+
+        // ---- Update UI bars ----
+        setSkillBar(shootingBar,   shooting);
+        setSkillBar(defenseBar,    defense);
+        setSkillBar(handlingBar,   handling);
+        setSkillBar(passingBar,    passing);
+        setSkillBar(reboundingBar, rebounding);
+        setSkillBar(speedBar,      speed);
+    }
+
+    private double toDouble(Object o) {
+        if (o == null) return 0;
+        try {
+            return Double.parseDouble(o.toString());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private double clamp(double v) {
+        if (v < 0) return 0;
+        if (v > 100) return 100;
+        return v;
+    }
+
+    private void setSkillBar(JProgressBar bar, double value) {
+        int val = (int)Math.round(value);
+        bar.setValue(val);
+        bar.setString(val + "/100");
+    }
+
+
     private void clearPerformanceTable() {
         if (performanceTableModel != null) {
             performanceTableModel.setRowCount(0);
         }
     }
+
 }

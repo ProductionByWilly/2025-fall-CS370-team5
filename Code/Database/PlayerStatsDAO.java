@@ -99,14 +99,34 @@ public class PlayerStatsDAO {
      * Returns rows for the performance JTable in PlayerPanel:
      *   [ "GameLabel", "Opponent", "Result", PTS, REB, AST ]
      *
-     * Result is empty string for now.
+     * Result is pulled from the games table. If games.result is null,
+     * we build something like "W 75-60" or "L 60-75" from team_score/opp_score.
      */
     public Object[][] fetchGameRowsForPlayer(int playerId) throws SQLException {
+
         final String sql =
-                "SELECT game_id, `Date` AS game_date, Opponent, PTS, REB, AST " +
-                        "FROM " + STATS_TABLE + " " +
-                        "WHERE player_id = ? " +
-                        "ORDER BY `game_id` DESC";
+                "SELECT " +
+                        "  pgs.game_id, " +
+                        "  pgs.`Date`       AS game_date, " +
+                        "  pgs.Opponent    AS opponent, " +
+                        "  COALESCE( " +
+                        "      g.result, " +
+                        "      CASE " +
+                        "          WHEN g.team_score IS NULL OR g.opp_score IS NULL THEN '' " +
+                        "          WHEN g.team_score > g.opp_score " +
+                        "              THEN CONCAT('W ', g.team_score, '-', g.opp_score) " +
+                        "          WHEN g.team_score < g.opp_score " +
+                        "              THEN CONCAT('L ', g.team_score, '-', g.opp_score) " +
+                        "          ELSE CONCAT('T ', g.team_score, '-', g.opp_score) " +
+                        "      END " +
+                        "  ) AS result_text, " +
+                        "  pgs.PTS, " +
+                        "  pgs.REB, " +
+                        "  pgs.AST " +
+                        "FROM " + STATS_TABLE + " pgs " +
+                        "LEFT JOIN games g ON g.game_id = pgs.game_id " +
+                        "WHERE pgs.player_id = ? " +
+                        "ORDER BY pgs.game_id DESC";
 
         List<Object[]> rows = new ArrayList<>();
 
@@ -117,19 +137,20 @@ public class PlayerStatsDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    int gameId      = rs.getInt("game_id");
-                    String gameDate = rs.getString("game_date");
-                    String opponent = rs.getString("Opponent");
-                    int pts         = rs.getInt("PTS");
-                    int reb         = rs.getInt("REB");
-                    int ast         = rs.getInt("AST");
+                    int gameId       = rs.getInt("game_id");
+                    String gameDate  = rs.getString("game_date");
+                    String opponent  = rs.getString("opponent");
+                    String result    = rs.getString("result_text");
+                    int pts          = rs.getInt("PTS");
+                    int reb          = rs.getInt("REB");
+                    int ast          = rs.getInt("AST");
 
                     String gameLabel = "#" + gameId + "  " + gameDate;
 
                     rows.add(new Object[] {
                             gameLabel,
                             opponent,
-                            "",      // Result placeholder
+                            result != null ? result : "",
                             pts,
                             reb,
                             ast
