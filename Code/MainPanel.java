@@ -39,17 +39,17 @@ public class MainPanel extends BasePanel {
         sectionsPanel.setBackground(AppColors.darkTeal);
         sectionsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
         
-        String FanDashboardLabel = "Fan Dashboard";
+        String FanDashboardLabel = "Fan";
         String FanDescription = "<html>Track favorite teams, participate in polls and view the leaderboard</html>";
         String FanButtonLabel = "Continue as Fan";
         String FanSymbolPath = "/Resources/images/FanImage.png";
 
-        String CoachDashboardLabel = "Coach Dashboard";
+        String CoachDashboardLabel = "Coach";
         String CoachDescription = "<html>Manage team, view analytics, and manage stats</html>";
         String CoachButtonLabel = "Continue as Coach";
         String CoachSymbolPath = "/Resources/images/CoachImage.png";
 
-        String PlayerDashboardLabel = "Player Dashboard";
+        String PlayerDashboardLabel = "Player";
         String PlayerDescription = "<html>View and filter personal stats,view performance metrics and efficiency ratings</html>";
         String PlayerButtonLabel = "Continue as Player";
         String PlayerSymbolPath = "/Resources/images/TrophyIcon.png";
